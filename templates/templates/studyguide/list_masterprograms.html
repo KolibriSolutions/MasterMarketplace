@@ -1,0 +1,104 @@
+{% extends 'base.html' %}
+{% load index_tags %}
+
+{% block body %}
+    <h1>Specialization Path List</h1>
+    <p>
+        {% if year %}
+            Showing paths of {{ year }}.
+        {% else %}
+            Showing paths of all years in the system.
+        {% endif %}
+        &nbsp;
+        <a href="{% url 'studyguide:yearslist' %}" class="button primary rounded">Change years</a>
+        {% if user|has_group:"studyadvisors;directors" %}
+            <a href="{% url 'studyguide:addmasterprogram' %}"
+               class="button primary rounded">Add</a>
+        {% endif %}
+    </p>
+    <table class="table bordered striped hovered datatable">
+        <thead>
+        <tr>
+            <th>Name</th>
+            <th>Group<br/></th>
+            <th>Courses</th>
+            {#            <th>Year</th>#}
+            <th data-searchable="false" data-sortable="false">Details</th>
+            {% if user|has_group:"studyadvisors" %}
+                <th data-searchable="false" data-sortable="false">Actions</th>
+            {% endif %}
+        </tr>
+        </thead>
+        <tbody>
+        {% for program in programs %}
+            <tr>
+                <td>{{ program.Name }}</td>
+                <td>
+                    {{ program.Group.all|join:' & ' }}
+                    {#                    {% if program.Group.count == 1 %}#}
+                    {#                        {{ program.Group.all.0 }}#}
+                    {#                    {% else %}#}
+                    {#                        <ul>#}
+                    {#                            {% for group in program.Group.all %}#}
+                    {#                                <li><a href="{% url 'studyguide:detailcapacitygroup' group.pk %}">{{ group }}</a></li>#}
+                    {# cannot be link because https://github.com/vedmack/yadcf/issues/491  #}
+                    {#                                <li>{{ group }}</li>#}
+                    {#                            {% endfor %}#}
+                    {#                        </ul>#}
+                    {#                    {% endif %}#}
+                </td>
+                <td>
+                    <ul>
+                        {% for course in program.MainCourses.all %}
+                            <li>
+                                {% if course.Info %}
+                                    <a href="{{ course.Info.detaillink }}"> {# Course.Info is a function to CourseBrowser to get Osirislink #}
+                                        {{ course.Code }} - {{ course.Info.name }}
+                                    </a>
+                                {% else %}
+                                    {{ course.Code }}
+                                {% endif %}
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </td>
+                {#                <td>{{ program.Year }}</td>#}
+                <td>
+                    <a href="{% url 'studyguide:detailmasterprogram' program.id %}" class="button info rounded">Info</a>
+                </td>
+                {% if user|has_group:"studyadvisors" %}
+                    <td>
+                        <a href="{% url 'studyguide:editmasterprogram' program.id %}" class="button primary rounded">Edit</a>
+                        <a href="{% url 'studyguide:deletemasterprogram' program.id %}" class="button danger rounded">Delete</a>
+                    </td>
+                {% endif %}
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}
+
+{% block scripts %}
+    {{ block.super }}
+    <script>
+
+        $(document).ready(function () {
+            $('.datatable').dt_wrapper([
+                {
+                    column_number: 1, filter_type: "select",
+                    {#column_data_type: 'html',#}
+                    {#html_data_type: 'selector',#}
+                    {#html_data_selector: 'li',#}
+                    filter_match_mode: 'exact'
+                }, {# this could be a li as well, but is uncommon. #}
+                {
+                    column_number: 2,
+                    filter_type: "select",
+                    column_data_type: 'html',
+                    html_data_type: 'selector',
+                    html_data_selector: 'li'
+                }, //to parse ul-li
+            ]);
+        });
+    </script>
+{% endblock %}

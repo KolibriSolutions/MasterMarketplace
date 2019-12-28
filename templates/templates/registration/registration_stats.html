@@ -1,0 +1,25 @@
+{% extends 'generic_stats.html' %}
+{% block stat_header %}
+    <h1>Registration stats</h1>
+    <div class="tabcontrol">
+        <ul class="tabs">
+            <li class="{% if not filter %}active{% endif %}">
+                <a href="{% url 'registration:stats' %}"><span></span>All</a>
+            </li>
+            {% for f in filters %}
+                <li class="{% if f == filter %}active{% endif %}">
+                    <a href="{% url 'registration:stats' f %}"><span></span>{{ f }}</a>
+                </li>
+            {% endfor %}
+        </ul>
+    </div>
+    <p>
+        {% if filter %}
+            Showing only data for cohort {{ filter }}.
+        {% else %}
+            Showing data of all time.
+        {% endif %}
+        <br/>
+        Showing {{ num }} registration, of which {{ done }} approved.
+    </p>
+{% endblock %}

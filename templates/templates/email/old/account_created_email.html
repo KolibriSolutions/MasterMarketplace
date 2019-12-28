@@ -1,0 +1,8 @@
+{% extends "email/base_email.html" %}
+
+{% block body %}
+Congratulations! You have been given staff access to the {{ name }} (<a href="{{ domain }}">{{ domain }}</a>).<br/>
+A user account has been created for this email address ({{ toemail }}) for the system.<br/>
+<br/>
+For explanation on how the {{ name }} works please login and visit the homepage.
+{% endblock %}

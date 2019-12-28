@@ -1,0 +1,15 @@
+mastermp:
+  script:
+    - virtualenv mastermarketplaceenv
+    - . mastermarketplaceenv/bin/activate
+    - python -V
+    - pip -V
+    - mkdir -p logging
+    - mkdir -p tracking/telemetry/data/
+    - pip install -r requirements.txt
+    - pip install -r requirements_development.txt
+    - pip install tblib
+    - python general_generate_secret_key.py
+    - touch startup.lock
+    - python manage.py migrate --settings=MasterMarketplace.settings_development
+    - python manage.py test --settings=MasterMarketplace.settings_development --parallel

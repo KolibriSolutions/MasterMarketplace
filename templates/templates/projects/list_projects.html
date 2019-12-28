@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+{% load index_tags %}
+{% load project_tags %}
+{% load custom_filters %}
+{% load static %}
+
+{% block body %}
+    <h1>
+        {% if usrsubject %}Visited by {{ usrsubject.usermeta.get_nice_name }}{% elif favorite %}Favorite {% else %}Published {% endif %}{{ type_filter|default:"" }} projects
+    </h1>
+    <div class="tabcontrol">
+        <ul class="tabs">
+            <li {% if not favorite %} class="active"{% endif %}><a href="{% if type_filter %}{% url 'projects:list' type_filter %}{% else %}{% url 'projects:list' %}{% endif %}">All projects</a></li>
+            <li {% if favorite %} class="active"{% endif %}><a href="{% if type_filter %}{% url 'projects:favorites' type_filter %}{% else %}{% url 'projects:favorites' %}{% endif %}">Favorite only</a></li>
+        </ul>
+    </div>
+    <div class="double-scroll">
+        <table class="table datatable striped hovered">
+            <thead>
+            <tr>
+                <th><span class="mif-star-half icon"></span></th>
+                <th data-priority="1">Name</th>
+                <th>Research group</th>
+                <th>Responsible staff</th>
+                <th>Assistants</th>
+                {#                <th>Type</th>#}
+
+                {# <th>External staff</th> #}
+                <th>Specialization Path</th>
+                <th>End date visible</th>
+                <th>Progress</th>
+                <th data-visible="false">URL</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for project in projects %}
+                <tr data-proj="{{ project.pk }}">
+                    <td>
+                        <span id="fav-{{ project.pk }}"
+                              class="star-favorite mif-star-{% if project.pk in favorite_projects %}full{% else %}empty{% endif %} icon">
+                        </span>
+                    </td>
+                    <td>
+                        <a href="{% url 'projects:details' project.id %}">{{ project.Title }}</a><br/>
+                        {{ project|project_labels }}
+                    </td>
+                    <td>{{ project.Group }} {% if project.SecondaryGroup.exists %}({{ project.SecondaryGroup.all|print_list }}){% endif %}</td>
+                    <td>
+                        <a href="mailto:{{ project.ResponsibleStaff.email }}">
+                            {{ project.ResponsibleStaff.usermeta.get_nice_name }}
+                        </a>
+                    </td>
+                    <td>
+                        <ul class="no-margin">
+                            {% for a in project.Assistants.all %}
+                                <li><a href="mailto:{{ a.email }}">{{ a.usermeta.get_nice_name }}</a></li>
+                            {% endfor %}
+                        </ul>
+                    </td>
+                    {#                    <td>#}
+                    {#                        {{ project.get_Type_display }}#}
+                    {#                    </td>#}
+                    {% comment %}       <td>
+                        <ul class="no-margin">
+                            {% for a in project.ExternalStaff.all %}
+                                <li><a href="mailto:{{ a.email }}">{{ a.usermeta.get_nice_name }}</a></li>
+                            {% endfor %}
+                        </ul>
+                    </td>
+            {% endcomment %}
+                    <td>{% if project.Program.all %}
+                        <ul>
+                            {{ project.Program.all|unordered_list }}
+                        </ul>
+                    {% else %}
+                        Any
+                    {% endif %}
+                    </td>
+                    <td data-sort="{{ project.EndDate|date:"U" }}">{{ project.EndDate }}</td>
+
+                    <td>{{ project.get_Progress_display|default:"Not yet started" }}</td>
+                    <td>{{ DOMAIN }}{% url 'projects:details' project.id %}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}
+{% block scripts %}
+    {{ block.super }}
+    <script src="{% static "js/websocketbridge.js" %}"></script>
+    <script src="{% static "js/favorite.js" %}"></script>
+    <script>
+        $(document).ready(function () {
+            // custom sort for favorite button, https://datatables.net/examples/plug-ins/dom_sort.html
+            $.fn.dataTable.ext.order['dom-order-favorite'] = function (settings, col) {
+                return this.api().column(col, {order: 'index'}).nodes().map(function (td, i) {
+                    return $('span', td).hasClass('mif-star-full') ? '1' : '0';
+                });
+            };
+            // make cols array for datatables
+            const l = $("table.datatable th").length;
+            const cols = new Array(l);
+            for (var i = 0; i < l; i++) {
+                cols[i] = null;
+            }
+            // set first column to custom sort function
+            cols[0] = {"orderDataType": "dom-order-favorite"};
+            // call datatables with yadcf and the cols array.
+            $('.datatable').dt_wrapper([
+                    {column_number: 1, filter_type: "text"},
+                    {column_number: 2, filter_type: "select", filter_match_mode: 'exact'},
+                    {#{column_number: , filter_type: "select"},#}
+                    {column_number: 3, filter_type: "select", column_data_type: 'html'},  // to parse mailto links
+
+                    {
+                        column_number: 4,
+                        filter_type: "select",
+                        column_data_type: 'html',
+                        html_data_type: 'selector',
+                        html_data_selector: 'li'
+                    }, //to parse ul-li
+                    {#{column_number: 5, filter_type: "select"},  //type#}
+
+                    {column_number: 7, filter_type: "select"}, // progress
+                ], cols
+            );
+        });
+    </script>
+{% endblock %}

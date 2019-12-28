@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% load static %}
+{% load custom_filters %}
+{% load index_tags %}
+{% load project_tags %}
+{% block body %}
+    <h1>
+        Personal stats
+    </h1>
+    <p>Showing only public visible projects. Only student views are counted.</p>
+    <table class="table datatable striped">
+        <thead>
+        <tr>
+            <th data-priority="1">Name</th>
+            <th>Responsible staff</th>
+            <th>Views</th>
+            <th>Views by registration</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for stat in stats %}
+            {% with stat.project as project %}
+                <tr>
+                    <td>
+                        <a href="{% url 'projects:details' project.id %}">{{ project.Title }}</a><br/>
+                    </td>
+                    <td>
+                        {{ project.ResponsibleStaff.usermeta.get_nice_name }}
+                    </td>
+                    <td>
+                        {{ project.tracking.UniqueVisitors.count }}
+                    </td>
+                    <td>
+                        {% include 'projects/inc_stats_proj.html' %}
+                    </td>
+                </tr>
+            {% endwith %}
+        {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}
+{% block scripts %}
+    {{ block.super }}
+    <script src="{% static "js/websocketbridge.js" %}"></script>
+    <script src="{% static 'js/Chart.bundle.min.js' %}"></script>
+    <script src="{% static "js/colors.js" %}"></script>
+    <script>
+        $(document).ready(function () {
+            $('.datatable').dt_wrapper([
+                    {column_number: 0, filter_type: "text"},
+                    {column_number: 1, filter_type: "select", filter_match_mode: 'exact'},
+                ]
+            );
+
+            {% autoescape off %}
+                {% for stat in stats %}
+                    new Chart($('#chart-proj-origin-{{ stat.project.id }}'), {
+                        data: {
+                            labels: {{ stat.labels_origin }},
+                            datasets: [{
+                                data: {{ stat.counts_origin }},
+                                backgroundColor: kelly_colors
+                            }]
+                        },
+                        type: 'pie',
+                        options: {
+                            legend: {
+                                "position": "right"
+                            },
+                        },
+                    });
+                    new Chart($('#chart-proj-reg-{{ stat.project.id }}'), {
+                        data: {
+                            labels: {{ stat.labels_reg }},
+                            datasets: [{
+                                data: {{ stat.counts_reg }},
+                                backgroundColor: kelly_colors
+                            }]
+                        },
+                        type: 'pie',
+                        options: {
+                            legend: {
+                                "position": "right"
+                            },
+                        },
+                    });
+                {% endfor %}
+            {% endautoescape %}
+        });
+    </script>
+{% endblock %}

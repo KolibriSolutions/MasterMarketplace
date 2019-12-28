@@ -1,0 +1,32 @@
+{% extends 'email/base_email.html' %}
+
+{% block body %}
+Student {{ student.usermeta.get_nice_name }} has changed his registration and awaits your approval.<br/>
+Changed details: <br/>
+{% if diff.program %}
+Changed program from {{ diff.program.0 }} to {{ diff.program.1 }}.<br/><br/>
+{% endif %}
+{% if diff.removedcourses %}
+Courses removed:
+    <ul>
+    {% for course in diff.removedcourses %}
+        <li>{{ course }}</li>
+    {% endfor %}
+    </ul>
+<br/><br/>
+{% endif %}
+{% if diff.addedcourses %}
+Courses added:
+    <ul>
+    {% for course in diff.addedcourses %}
+        <li>{{ course }}</li>
+    {% endfor %}
+    </ul>
+<br/><br/>
+{% endif %}
+{% if diff.externalcourses %}
+External courses changed to: {{ diff.externalcourses }}<br/>
+{% endif %}
+<a href="mailto:{{ student.email }}">Mail Student</a><br/>
+<a href="{{ DOMAIN }}{% url 'registration:approve' registration.pk %}">Go to approve page</a>
+{% endblock %}

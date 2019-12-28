@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% load index_tags %}
+{% block body %}
+    <h1>List all users</h1>
+    <p>
+        After first login, users are 'unverified'. Verify them using the green 'Verify' button to allow them to use the system.
+        To disallow someone to login, press 'Disable' to disable the user.
+        Use the 'groups' button to give users different permissions in the system.
+    </p>
+    <a href="{% url 'support:groupadministratorsform' %}" class="button primary">Capacity Group Administration</a>
+    <a href="{% url 'accesscontrol:list' %}" class="button primary">Control student access</a>
+    <div class="double-scroll">
+        <table class="table bordered hovered striped datatable">
+            <thead>
+            <tr>
+                <th>Name</th>
+                <th>Username</th>
+                <th>Email</th>
+                <th>Type<br/></th>
+                <th data-searchable="false">Last login</th>
+                <th>Other</th>
+                <th data-searchable="false" data-sortable="false">Edit</th>
+                {% if user.is_superuser %}
+                    <th data-searchable="false" data-sortable="false">Godpowers</th>
+                {% endif %}
+            </tr>
+            </thead>
+            <tbody>
+            {% for u in users %}
+                <tr>
+                    <td>{{ u.usermeta.get_nice_name }}</td>
+                    <td>{{ u.username }}</td>
+                    <td><a href="mailto:{{ u.email }}">{{ u.email }}</a></td>
+                    <td>
+                        {% if u.groups.exists or u.is_superuser %}
+                            {{ u.groups.all|join:" & " }}{% if u.is_superuser %} & superuser{% endif %}
+                        {% else %}
+                            student (no groups)
+                        {% endif %}
+                    </td>
+
+                    <td data-sort="{{ u.last_login|date:"U" }}">{{ u.last_login }}</td>
+                    <td>
+                        {% if u.groups.exists %}
+                            {% if u.administratoredgroups.exists %}
+                                Group admin of {% for group in u.administratoredgroups.all %}
+                                {{ group.Group.ShortName }} ({{ group.Super|yesno:"rw,r" }})
+                            {% endfor %}
+                            {% endif %}
+                        {% else %}
+                            Cohort: {{ u.registration.Cohort|default:"None" }}
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if u.groups.exists or u.is_superuser %}
+                            {# staff #}
+                            {% if u|has_group:'unverified' and not u.is_superuser %}
+                                <a class="button success" id="userverify{{ u.id }}"
+                                   onclick="verify({{ u.id }}, this);">Verify
+                                </a>
+                            {% endif %}
+                            <a href="{% url 'support:usergroups' u.id %}" class="button primary">Groups</a>
+                        {% else %}
+                            {# student #}
+                            {#                            <a href="{% url 'support:overruleusermeta' u.id %}" class="button primary">User Meta</a>#}
+                            {% if u.allowedaccess %}
+                                <a href="{% url 'accesscontrol:edit' u.allowedaccess.pk %}" class="button primary">Access
+                                    Control</a>
+                            {% else %}
+                                - {# User has no access OR accesscontrol object not yet linked to the user.  #}
+                            {% endif %}
+                        {% endif %}
+                        {% if u.is_active %}<a href="{% url 'support:toggledisable' u.id %}" class="button warning">Disable</a>
+                        {% else %}<a href="{% url 'support:toggledisable' u.id %}" class="button success">Enable</a>
+                        {% endif %}
+                    </td>
+                    {% if user.is_superuser %}
+                        <td>
+                            <a href="{% url 'impersonate-start' u.id %}" class="button primary">Impersonate</a>
+                            <a href="{% url 'tracking:userdetail' u.id %}" class="button primary">Telemetry</a>
+                            <a href="{% url 'support:userinfo' u.id %}" class="button primary">Info</a>
+                            <a href="{% url 'admin:auth_user_change' u.id %}" class="button warning">Admin edit</a>
+                            {% if u.usermeta %}<a href="{% url 'admin:index_usermeta_change' u.usermeta.id %}" class="button warning">Meta edit</a>{% endif %}
+                        </td>
+                    {% endif %}
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}
+{% block scripts %}
+    {{ block.super }}
+    <script>
+        $(document).ready(function () {
+            var dt = $('.datatable').dt_wrapper([
+                    {column_number: 0, filter_type: "text"},
+                    {column_number: 3, filter_type: "select"},
+                    {#{column_number: 4, filter_type: "select", html5_data: 'data-search'},#}
+                    {#{column_number: 5, filter_type: "select",}#}
+                ]
+            );
+        });
+
+        function verify(id, button) {
+            $.get("/api/verify/assistant/" + String(id), function (data) {
+                $.Notify({
+                    caption: 'Result',
+                    content: data,
+                    type: 'info'
+                });
+                $('#userverify' + String(id)).remove();
+            }).fail(function () {
+                $.Notify({
+                    caption: 'Server error',
+                    content: 'Please refresh this page (F5) or contact system administrator',
+                    icon: "<span class='mif-warning'></span>",
+                    type: "alert"
+                });
+            });
+        }
+    </script>
+{% endblock %}

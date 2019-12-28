@@ -1,0 +1,49 @@
+{% extends "email/base_email.html" %}
+
+{% block body %}
+    <p>A message from the {{ NAME }} (<a href="{{ DOMAIN }}">{{ DOMAIN }}</a>):<br/>
+        {{ message }}
+    </p>
+    <p>For any questions, please contact the responsible staff listed below.</p>
+    <br/>
+
+    <table>
+        <tr>
+            <td>
+                Project:
+            </td>
+            <td>
+                {{ project.Title }}
+            </td>
+        </tr>
+        <tr>
+            <td>
+                Responsible staff:
+            </td>
+            <td>
+                {{ project.ResponsibleStaff.usermeta.get_nice_name }}
+            </td>
+        </tr>
+        <tr>
+            <td>
+                Assistant(s):
+            </td>
+            <td>
+                <ul>
+                    {% for a in project.Assistants.all %}
+                        <li>{{ a.usermeta.get_nice_name }}</li>
+                    {% endfor %}
+                </ul>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                Capacity group:
+            </td>
+            <td>
+                {{ project.Group }}
+            </td>
+        </tr>
+    </table>
+    <br/>
+{% endblock %}

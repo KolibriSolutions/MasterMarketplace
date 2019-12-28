@@ -1,0 +1,46 @@
+{% extends 'GenericForm.html' %}
+{% block formheader %}
+    A user cannot have more than two groups. In most cases, one group is sufficient.
+    <h3>The following group types are available</h3>
+    <table class="table striped hovered">
+        <thead>
+        <tr>
+            <th>Name</th>
+            <th>Rights</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr>
+            <td>supervisors</td>
+            <td>'Responsible Staff' for a project. Can also be assistant to a project, like assistant.
+            </td>
+        </tr>
+        <tr>
+            <td>unverified</td>
+            <td>Unverified user. This is what new users automatically become on
+                first login. The user can later be verified by a support user. It is not possible to assign this group
+                to a user.
+            </td>
+        </tr>
+        <tr>
+            <td>assistants</td>
+            <td>'Assistant' for a project, the daily supervisor.</td>
+        </tr>
+        <tr>
+            <td>studyadvisors</td>
+            <td>Support user, makes the distributions and is able to make do all kind of management tasks. <b>Be
+                careful, this group gives the users a lot of power!</b></td>
+        </tr>
+        <tr>
+            <td>directors</td>
+            <td>Directors can view all projects</td>
+        </tr>
+        <tr>
+            <td>groupadministrator</td>
+            <td>Has read and/or write access to all projects of specific group, has to be specified in group administrator form</td>
+        </tr>
+        </tbody>
+
+    </table>
+    <br/>
+{% endblock %}

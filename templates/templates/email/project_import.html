@@ -1,0 +1,13 @@
+{% extends 'email/base_email.html' %}
+
+{% block body %}
+The {{ NAME }} is in the process of importing projects from the old system holding master projects for your group.<br/>
+In order to complete importing your projects please log in at least once at <a href="https://master.ele.tue.nl/">https://master.ele.tue.nl/</a>
+    with your TU/e account. The system will then import your projects, you will be notified when this is done.
+You are assigned to the following projects in the old system:<br/>
+<ul>
+{% for proj in projects %}
+<li>{{ proj }}</li>
+{% endfor %}
+</ul>
+{% endblock %}

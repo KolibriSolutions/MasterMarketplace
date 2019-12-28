@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% load custom_filters %}
+{% load index_tags %}
+
+{% block body %}
+    {% if not administration %}
+        <h1>Courses List</h1>
+    {% else %}
+        <h1>Administration Codes List</h1>
+    {% endif %}
+    {% if year %}
+        Showing courses of {{ year }}.
+    {% else %}
+        Showing courses of all years in the system.
+    {% endif %}
+    &nbsp
+    <a href="{% url 'studyguide:yearslist' %}" class="button primary">Change years</a>
+    {% if user|has_group:"studyadvisors" %}
+    <a href="{% url 'studyguide:maincourseadd' %}" class="button">Add Course</a>
+    {% endif %}
+    <br/>
+    <table class="table bordered striped hovered datatable">
+        <thead>
+        <tr>
+            <th>Code</th>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Group</th>
+            <th>Quarter</th>
+            <th>Time slot</th>
+            <th>Teacher</th>
+            <th data-searchable="false" data-sortable="false">Osiris</th>
+            {% if user|has_group:"studyadvisors" %}
+                <th data-searchable="false" data-sortable="false">Actions</th>
+            {% endif %}
+        </tr>
+        </thead>
+        <tbody>
+        {% for type, courses in courses_per_type.items %}
+            {% for course in courses %}
+                <tr>
+                    <td><b>{{ course.code }}</b></td>
+                    <td>{{ course.name }}</td>
+                    <td>{{ type }}</td>
+                    <td>{{ course.owner.group }}</td>
+                    <td>{{ course.quartile }}</td>
+                    <td>{{ course.timeslot }}</td>
+                    <td>{{ course.responsiblestaff.name }}</td>
+                    <td><a href="{{ course.detaillink }}" class="button info rounded">Osiris</a></td>
+                    {% if user|has_group:"studyadvisors" %}
+                    <td>
+                        <a href="{% url 'studyguide:maincourseedit' course.code year.Begin.year %}" class="button primary">Edit</a>
+                        <a href="{% url 'studyguide:maincoursedelete' course.code year.Begin.year %}" class="button warning">Delete</a>
+                    </td>
+                    {% endif %}
+                </tr>
+            {% endfor %}
+        {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}
+
+
+{% block scripts %}
+    {{ block.super }}
+    <script>
+        $(document).ready(function () {
+            $('.datatable').dt_wrapper([
+                    {column_number: 0, filter_type: 'text'}, //code
+                    {column_number: 1, filter_type: 'text'}, //name
+                    {column_number: 2, filter_type: 'select'}, //type
+                    {column_number: 3, filter_type: 'select'}, //Group
+                    {column_number: 4, filter_type: "multi_select", filter_match_mode: 'exact'}, // Quarter
+                    {column_number: 5, filter_type: "multi_select", filter_match_mode: 'exact'}, //timeslot
+                    {column_number: 6, filter_type: "select"}, //teacher
+                ]
+            );
+        });
+    </script>
+{% endblock %}

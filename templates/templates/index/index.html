@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% load index_tags %}
+{% load static %}
+{% block body %}
+
+    <div class="grid">
+        <div class="row cells4">
+            <div class="cell" style="text-align: center" id="cellLogos">
+                <object data="{% static "img/tuelogo.svg" %}" type="image/svg+xml" style="width:50%;">TU/e Logo</object>
+            </div>
+            <div class="cell colspan3">
+                <h1>Master Project Marketplace</h1>
+                <h4>Hello and welcome to the marketplace!</h4>
+                {% if user.is_authenticated %}
+                    <p>
+                        {% if user|has_group:'any' %}
+                            As a staff member, you can add or edit projects using the 'projects' menu on top.
+                        {% else %}
+                            {% if user.registration.exists or not user|is_ele %}
+                                Use the 'projects' menu to browse internships and graduation projects.
+                            {% else %}
+                                Please register your master track and electives using the 'registration' menu on top of
+                                the
+                                page.
+                            {% endif %}
+                        {% endif %}
+                    </p>
+                    <p>If you experience errors or have questions, please contact the EE {{ support_role }}
+                        {{ support_name }} at
+                        <a href="mailto:{{ support_email }}" title="Mail {{ support_name }}">{{ support_email }}</a>.
+                    </p>
+                    {% if date_projects %}
+                        <br/>
+                        <div class="accordion" data-role="accordion" data-close-any="true">
+                            <div class="frame active">
+                                <div class="heading">Changed projects since your last login</div>
+                                <div class="content active bg-lighterGray">
+                                    <ul>
+                                        {% for date_list in date_projects|slice:'5' %}{# max number of days shown. #}
+                                            <li>{{ date_list.0 }}
+                                                <ul>
+                                                    {% for project in date_list.1 %}
+                                                        <li>
+                                                            <a href="{% url 'projects:details' project.id %}"
+                                                               title="{{ project.Title }}">
+                                                                {{ project.Title|truncatewords:'7' }}
+                                                            </a>
+                                                            by {{ project.ResponsibleStaff.usermeta.get_nice_name }}
+                                                        </li>
+                                                    {% endfor %}
+                                                </ul>
+                                            </li>
+                                        {% endfor %}
+                                    </ul>
+                                {% if date_projects|length > 5 %} {# make sure this is the same number as the slice #}
+                                    and some more...
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                    {% endif %}
+                {% else %}
+                    {% csrf_token %}
+                    Please start by <a href="{% url 'shen_ring:login' %}" class="button primary">logging in</a><br/>
+                    <br/>If you experience problems with logging in, please contact the EE {{ support_role }} for the
+                    master,
+                    {{ support_name }}.
+                {% endif %}
+
+                <br/>
+            </div>
+        </div>
+    </div>
+{% endblock %}

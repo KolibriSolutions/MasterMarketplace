@@ -1,0 +1,550 @@
+{% load static %}
+{% load custom_filters %}
+{% load project_tags %}
+{% load index_tags %}
+{% load registration_tags %}
+{% load support_tags %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="description" content="TU/e {{ NAME }}">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+    {# fix for IE for intranet compatibility #}
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {% block metatags %}
+
+    {% endblock %}
+
+    <link rel="shortcut icon" href="{% static "/favicon.ico" %}"/>
+
+    <title>{{ NAME }}</title>
+    {% block head %}
+        <link href="{% static "css/metro.min.css" %}" rel="stylesheet">
+        <link href="{% static "css/metro-icons.min.css" %}" rel="stylesheet">
+        <link href="{% static "css/metro-responsive.min.css" %}" rel="stylesheet">
+        <link href="{% static "css/metro-schemes.min.css" %}" rel="stylesheet">
+        <link href="{% static "css/metro-colors.min.css" %}" rel="stylesheet">
+        <link href="{% static "css/custom.css" %}" rel="stylesheet">
+        {% block stylesheets %}
+        {% endblock %}
+    {% endblock %}
+</head>
+<body {% block bodytag %}  {% endblock %}>
+<div id="wrapper">
+    {# This conditional comment is support until IE9. Newer IE won't see it. #}
+    <!--[if IE]>
+        <div style="background: #e00; text-align: center; position: absolute; top: 5em; height:7em; left:20%; right:20%; color: #FFF; z-index:1000; padding: 5px;">
+        <b>Your browser is not compatible with this website. Please update your browser or use another browser.</b>
+        </div>
+    <![endif]-->
+    <script>
+        if (navigator.appVersion.indexOf("MSIE 10") !== -1) {
+            document.write('        <div style="background: #e00; text-align: center; position: absolute; top: 5em; height:7em; left:20%; right:20%; color: #FFF; z-index:1000; padding: 5px;">' +
+                '        <b>Your browser is not compatible with this website. Please update your browser or use another browser.</b>' +
+                '        <a href="http://windows.microsoft.com/en-us/internet-explorer/download-ie" target="_blank" style="color: #fff; text-decoration: underline;">Please upgrade here.</a></div>');
+        }
+    </script>
+
+    <noscript>
+        <div class="warning-banner">
+            Your JavaScript is disabled. This website uses JavaScript for some functionality. Please enable JavaScript
+            to use all functionality.
+        </div>
+    </noscript>
+    {% block menu %}
+        {% get_menu_links as menulinks %}
+
+        <div class="app-bar" data-role="appbar">
+            <div class="app-bar-element branding">{{ NAME }}</div>
+            <ul class="app-bar-menu">
+                <li><a href="/"><span class="mif-home icon"></span>Home</a></li>
+                {% if user.is_authenticated %}
+                    {% if  user|has_group:"studyadvisors;directors" %}
+                        {# studyadvisor #}
+                        {# registration menu for staff #}
+                        <li>
+                            <a href="" class="dropdown-toggle"><span class="mif-registered icon"></span>Registrations</a>
+                            <ul class="d-menu" data-role="dropdown">
+                                <li><a href="{% url 'registration:listall' %}">List</a></li>
+                                <li><a href="{% url 'registration:deadlines' %}">Deadlines</a></li>
+                                <li>
+                                    <a href="{% url 'tracking:registrationchanges' %}">Registrations Log</a>
+                                </li>
+                                <li><a href="{% url 'registration:stats' %}">Registration Statistics</a></li>
+
+                            </ul>
+                        </li>
+                        {# access control menu #}
+                        <li>
+                            <a href="" class="dropdown-toggle"><span class="mif-lock icon"></span>Access Control</a>
+                            <ul class="d-menu" data-role="dropdown">
+                                <li><a href="{% url 'accesscontrol:list' %}">List All</a></li>
+                                <li><a href="{% url 'accesscontrol:grant' %}">Grant</a></li>
+                                <li><a href="{% url 'accesscontrol:import' %}">Import</a></li>
+                                <li>
+                                    <a href="#" class="dropdown-toggle">Origins</a>
+                                    <ul class="d-menu" data-role="dropdown">
+                                        <li><a href="{% url 'accesscontrol:createorigin' %}">Add New</a></li>
+                                        <li><a href="{% url 'accesscontrol:listorigins' %}">List All</a></li>
+                                    </ul>
+                                </li>
+                            </ul>
+                        </li>
+                        {# studyguide menu #}
+                        {% if not user|has_group:"directors" or user.is_superuser %}
+                            <li>
+                                <a href="" class="dropdown-toggle"><span class="mif-library icon"></span>Study Guide</a>
+                                <ul class="d-menu" data-role="dropdown">
+                                    <li><a href="{% url 'studyguide:yearslist' %}">List Years</a></li>
+                                    <li>
+                                        <a href="#" class="dropdown-toggle"><span class="mif-copyright icon"></span>Courses</a>
+                                        <ul class="d-menu" data-role="dropdown">
+                                            <li><a href="{% url 'studyguide:courseslist' %}">List Courses</a></li>
+                                            <li><a href="{% url 'studyguide:maincourseadd' %}">Add Course</a></li>
+                                        </ul>
+                                    </li>
+                                    <li>
+                                        <a href="#" class="dropdown-toggle"><span class="mif-shop icon"></span>Specialization
+                                            Paths</a>
+                                        <ul class="d-menu" data-role="dropdown">
+                                            <li><a href="{% url 'studyguide:masterprogramlist' %}">List All</a></li>
+                                            <li><a href="{% url 'studyguide:addmasterprogram' %}">Add New</a></li>
+                                        </ul>
+                                    </li>
+                                    <li><a href="{% url 'studyguide:listcapacitygroups' %}"><span
+                                            class="mif-organization icon"></span>Capacity Groups</a></li>
+                                    {% for link in menulinks %}
+                                        <li>
+                                            <a href="{{ link.Url }}">
+                                                {% if link.Icon %}
+                                                    <span class="mif-{{ link.Icon }} icon"></span> {% endif %}{{ link.Name }}
+                                            </a>
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                            </li>
+                        {% endif %}
+                        {# tracking menu #}
+                        <li>
+                            <a href="" class="dropdown-toggle"><span class="mif-bookmarks icon"></span>Support</a>
+                            <ul class="d-menu" data-role="dropdown">
+                                <li>
+                                    <a href="#" class="dropdown-toggle">Lists</a>
+                                    <ul class="d-menu" data-role="dropdown">
+                                        <li><a href="{% url 'support:listusers' %}">All Users</a></li>
+                                        <li><a href="{% url 'support:liststaff' %}">All Staff</a></li>
+                                    </ul>
+                                </li>
+                                <li><a href="{% url 'support:mailinglist' %}">Mailing List</a></li>
+                                <li><a href="{% url 'support:mailingtemplates' %}">Mailing Templates</a></li>
+                                <li><a href="{% url 'support:groupadministratorsform' %}">Group Administrators</a></li>
+                                <li><a href="{% url 'support:editmenulinks' %}">Study guide menu links</a></li>
+                                <li>
+                                    <a href="" class="dropdown-toggle">Sidebar promotions</a>
+                                    <ul class="d-menu" data-role="dropdown">
+                                        <li><a href="{% url 'support:addpromotion' %}">Add sidebar promotion</a></li>
+                                        <li><a href="{% url 'support:editpromotions' %}">Edit sidebar promotions</a></li>
+                                    </ul>
+                                </li>
+                            </ul>
+                        </li>
+                    {% endif %}
+
+                    {% if  user|has_group:"any" %}
+
+                        <li><a href="" class="dropdown-toggle"><span class="mif-mail-read icon"></span>Projects</a>
+                            <ul class="d-menu" data-role="dropdown">
+                                <li>
+                                    <a href="{% url 'projects:list' %}">All published projects</a>
+                                </li>
+                                <li>
+                                    <a href="{% url 'projects:list' 'internship' %}">Public internship projects</a>
+                                </li>
+                                <li>
+                                    <a href="{% url 'projects:list' 'graduation' %}">Public graduation projects</a>
+                                </li>
+                                {% if user|can_create_project %}
+                                    <li><a href="{% url 'projects:create' %}">Create new project</a></li>
+                                {% endif %}
+                                {% if user|has_group:"supervisors;assistants;studyadvisors" %}
+                                    {# no directors #}
+                                    <li>
+                                        <a href="{% url 'projects:chooseedit' %}">
+                                            {% if user|has_group:'studyadvisors' %}
+                                                All projects
+                                            {% else %}
+                                                My projects
+                                            {% endif %}
+                                        </a>
+                                    </li>
+                                {% endif %}
+                                {% if user|has_group:"groupadministrator" and not user.is_superuser %}
+                                    <li><a href="{% url 'projects:listgroupprojects' %}">My group projects</a></li>
+                                {% endif %}
+                                {% if user|has_group:"supervisors;assistants;groupadministrator" %}
+                                    <li><a href="{% url 'projects:pending' %}">My pending projects</a></li>
+                                {% endif %}
+                                <li>
+                                    <a href="" class="dropdown-toggle">Statistics</a>
+                                    <ul class="d-menu" data-role="dropdown">
+                                        <li><a href="{% url 'projects:stats' %}">General stats</a>
+                                        <li><a href="{% url 'projects:stats_personal' %}">Personal stats</a></li>
+                                    </ul>
+
+                                </li>
+                                <li>
+                                    <a href="" class="dropdown-toggle">Project Labels</a>
+                                    <ul class="d-menu" data-role="dropdown">
+                                        <li><a href="{% url 'projects:labels' %}">List all</a>
+                                        <li><a href="{% url 'projects:createlabel' %}">Add label</a></li>
+                                    </ul>
+                                </li>
+
+                                {% if user|has_group:"studyadvisors;directors" %}
+                                    <li><a href="{% url 'projects:contentpolicy' %}">Content Policy Violations</a></li>
+                                {% endif %}
+                                {#                                                        {% if user|has_group:"groupadministration" and not user.is_superuser %}#}
+                                {#                                                            <li><a href="{% url 'support:listgroupprojects' %}">My group projects</a></li>#}
+                                {#                                                        {% endif %}#}
+                                {#                                                            <li>#}
+                                {#                                                                <a href="#" class="dropdown-toggle">Statistics</a>#}
+                                {#                                                                <ul class="d-menu" data-role="dropdown">#}
+                                {#                                                                    <li><a href="{% url 'projects:statsgeneral' %}">General Report</a></li>#}
+                                {#                                                                    <li><a href="{% url 'projects:stats' %}">Personal Report</a></li>#}
+                                {#                                                                </ul>#}
+                                {#                                                            </li>#}
+                            </ul>
+                        </li>
+                        <li>
+                            <a href="{% url 'support:liststudents' %}">
+                                <span class="mif-users icon"></span>Distributions
+                            </a>
+                        </li>
+                        {% if not user|has_group:'studyadvisors;directors' %}
+                            {# registration stats for normal staff #}
+                            <li>
+                                <a href="{% url 'registration:stats' %}">
+                                    <span class="mif-users icon"></span>Stats
+                                </a>
+                            </li>
+                        {% endif %}
+                        {% else %}{# Student #}
+                        {% if user|is_ele %}
+                            {# registration menu for student #}
+                            <li>
+                                <a href="{% url 'registration:registrationform' %}">
+                                    <span class="mif-registered icon"></span>Registration
+                                </a>
+                            </li>
+                        {% endif %}
+                        <li>
+                            <a href="" class="dropdown-toggle"><span class="mif-mail-read icon"></span>Projects</a>
+                            <ul class="d-menu" data-role="dropdown">
+                                <li>
+                                    <a href="{% url 'projects:list' 'internship' %}">Internship projects</a>
+                                </li>
+                                <li>
+                                    <a href="{% url 'projects:list' 'graduation' %}">Graduation projects</a>
+                                </li>
+                            </ul>
+                        </li>
+                        <li>
+                            <a href="{% url 'students:list_applications' %}">
+                                <span class="mif-mail-read icon"></span>Chosen projects
+                            </a>
+                        </li>
+                    {% endif %}
+                    {# buttons for both  #}
+                {% endif %}
+                {# all users #}
+                {# studyguide #}
+                {% if not user.is_superuser and not user|has_group:"studyadvisors" or not user.is_authenticated %}
+                    <li>
+                        <a href="" class="dropdown-toggle"><span class="mif-library icon"></span>Study Guide</a>
+                        <ul class="d-menu" data-role="dropdown">
+                            <li><a href="{% url 'studyguide:courseslist' %}"><span class="mif-copyright icon"></span>All
+                                Courses</a></li>
+                            {#      <li><a href=""><span class="mif-organization icon"></span>All Research Groups</a></li>#}
+                            <li><a href="{% url 'studyguide:masterprogramlist' %}"><span class="mif-shop icon"></span>All
+                                Specialization Paths</a></li>
+                            <li>
+                                {% for link in menulinks %}
+                                    <li>
+                                        <a href="{{ link.Url }}">
+                                            <span class="mif-{{ link.Icon }} icon"></span> {{ link.Name }}
+                                        </a>
+                                    </li>
+                                {% endfor %}
+
+                            {#                            #}
+                            {#                            <li><a href="{% url 'studyguide:listcapacitygroups' %}"><span#}
+                            {#                                    class="mif-organization icon"></span>Capacity Groups</a></li>#}
+                            {#                            <li>#}
+                            {#                                <a href="https://educationguide.tue.nl/programs/graduate-school/masters-programs/electrical-engineering/curriculum/professional-development/">#}
+                            {#                                    <span class="mif-favorite icon"></span> Mentor List#}
+                            {#                                </a></li>#}
+                        </ul>
+                    </li>
+                {% endif %}
+
+
+                {% if user.is_superuser %}
+                    <li>
+                        <a href="" class="dropdown-toggle"><span class="mif-wrench"></span>GodPowers</a>
+                        <ul class="d-menu" data-role="dropdown">
+                            <li>
+                                <a href="#" class="dropdown-toggle">Tracking</a>
+                                <ul class="d-menu" data-role="dropdown">
+                                    <li><a href="{% url 'tracking:listuserlog' %}">Users login log</a></li>
+                                    <li><a href="{% url 'tracking:statuslist' %}">Project status change</a></li>
+                                    <li><a href="{% url 'tracking:applicationlist' %}">Application tracking</a></li>
+                                    <li><a href="{% url 'tracking:distributionslist' %}">Distributions tracking</a></li>
+                                    <li><a href="{% url 'tracking:registrationchanges' %}">Registrations Log</a></li>
+                                </ul>
+                            </li>
+                            <li><a href="{% url 'godpowers:sessionlist' %}">Session List</a></li>
+                            <li><a href="{% url 'index:list_feedback' %}">Feedback Reports</a></li>
+                            <li><a href="{% url 'godpowers:clearcache' %}">Clear Cache</a></li>
+                            <li><a href="/admin/">Django admin</a></li>
+                        </ul>
+                    </li>
+                {% endif %}
+                <li><a href="{% url 'index:about' %}"><span class="mif-info icon"></span>About</a></li>
+            </ul>
+            <div class="app-bar-pullbutton automatic"></div>
+            <ul class="app-bar-menu place-right" data-flexdirection="reverse">
+                {% if user.is_authenticated %}
+                    <li><a href="{% url 'index:profile' %}"><span class="mif-user icon"></span>Profile</a>
+                    </li>
+                    <li><a href="{% url 'index:logout' %}"><span class="mif-vpn-lock icon"></span>Logout</a></li>
+                {% else %}
+                    <li><a href="{% url 'shen_ring:login' %}"><span class="mif-vpn-lock icon"></span>Login</a>
+                    </li>
+                {% endif %}
+            </ul>
+        </div>
+    {% endblock %}
+    <div id="content">
+        <div class="grid">
+            <div class="row cells5" id="contentGrid">
+                <div class="cell colspan4" id="cellContent">
+                    {% block body %}
+                        {% if Message %}
+                            {% autoescape off %}
+                                <p>{{ Message }}</p>
+                            {% endautoescape %}
+                        {% endif %}
+                        {% if return %}
+                            <a href="{% if returnget %}{% url return returnget %}{% else %}{% url return %}{% endif %}"
+                               class="button primary">Return</a>
+                        {% endif %}
+                    {% endblock %}
+                </div>
+                <div class="cell" id="cellSidebar">
+                    {% if user.is_authenticated %}
+                        {% broadcast_available user as status %}
+                        {% if status %}
+                            <div class="panel">
+                                <div class="heading">
+                                    <span class="title">Announcements</span>
+                                </div>
+                                <div class="content padding5">
+                                    {% get_broadcasts user %}
+                                </div>
+                            </div>
+                            <br>
+                        {% endif %}
+
+                        {% if user|has_group:'studyadvisors' %}
+                            {% get_unverified_users as unverifieds %}
+                            <div class="panel">
+                                <div class="heading">
+                                    <span class="title">Unverified users</span>
+                                </div>
+                                <div class="content padding5">
+                                    <ul>
+                                        {{ unverifieds|unordered_list }}
+                                    </ul>
+                                    <a href="{% url 'support:listusers' %}" class="button primary">Review user list</a>
+                                </div>
+                            </div>
+                            <br/>
+                        {% endif %}
+
+                        {% if user|has_group:"unverified" and not user.is_superuser %}
+                            <p><strong>
+                                You have an unverified type2staff account.<br/>
+                                Your type2staff account will be verified by the supportstaff or when a proposals
+                                made by
+                                you is approved by the type1staff (Responsible professor).
+                                This means you can not view public projects until you are verified.
+                            </strong></p>
+                        {% endif %}
+
+                        {% if user|has_group:"supervisors;assistants" %}
+                            <p>
+                                Pending projects: {% get_pending_tag user %}
+                            </p>
+                        {% endif %}
+
+                        {% if user.distributions.exists %}
+                            {# only students #}
+                            <div class="panel">
+                                <div class="heading">
+                                    <span class="title">Distributions</span>
+                                </div>
+                                <div class="content padding5">
+                                    {% for d in user.distributions.all %}
+                                        {% if d.Project.Progress == 2 %} {# Finished project #}
+                                            <p>You have finished project:</p>
+                                        {% else %}
+                                            <p>You are distributed to the project:</p>
+                                        {% endif %}
+                                        <a href="{% url 'projects:details' d.Project.pk %}"
+                                           class="button primary">
+                                            {{ d.Project.Title|truncatechars:'25' }}
+                                        </a>
+                                    {% endfor %}
+                                    <p>
+                                        If you do not agree with a distribution, please contact the supervisor of the
+                                        project
+                                    </p>
+                                </div>
+                            </div>
+                            <br/>
+                        {% endif %}
+
+                        {% if user.is_impersonate %}
+                            <p>
+                                <strong>Impersonating user {{ request.user }} as {{ request.impersonator }}</strong>
+                                <br/>
+                                <a href="{% url 'impersonate-stop' %}" class="button primary">Stop impersonating</a>
+                            </p>
+                        {% endif %}
+                        {% if user|has_group:"studyadvisors" %}
+                            <div class="panel">
+                                <div class="heading">
+                                    <span class="title">Registrations status</span>
+                                </div>
+                                <div class="content padding5">
+                                    {% registration_status %}
+                                </div>
+                            </div>
+                            <br>
+                        {% endif %}
+                        {# Promotions #}
+
+                        {% get_promotions user as promotions %}
+
+                        {% if promotions %}
+                            <div class="panel">
+                                <div class="heading">
+                                    <span class="title">Promotions:</span>
+                                </div>
+                                <div class="content padding5">
+                                    {% for p in promotions %}
+                                        <div class="promotion margin5 clickable clearfix"
+                                             onclick="metroDialog.open('#promotiondialog-{{ p.id }}')">
+                                            <h4>{{ p.Organization }}</h4>
+                                            {% if p.File %}
+                                                <img class="promotionlogo place-left"
+                                                     src="{% url "download:promotionfile" p.id %}"
+                                                     alt="{{ p.Organization }}"/>
+                                            {% endif %}
+                                            <span class="promotionmessage">{{ p.Text|truncatewords:'20' }}</span>
+                                        </div>
+                                        <div class="promotiondialog padding20"
+                                             id="promotiondialog-{{ p.id }}"
+                                             data-role="dialog"
+                                             data-overlay-click-close="true"
+                                             data-overlay-color="op-dark"
+                                             data-overlay="true"
+                                             data-width="60%"
+                                             data-close-button="true"
+                                        >
+
+                                            {% if p.File %}
+                                                <img class="promotionlogo margin5 place-right"
+                                                     src="{% url "download:promotionfile" p.id %}"
+                                                     alt="{{ p.Organization }}"/>
+                                            {% endif %}
+                                            <h1>{{ p.Organization }}</h1>
+                                            {% if p.CapacityGroups.exists %}
+                                                <div>
+                                                    This promotion is most relevant for students of these capacity
+                                                    groups:
+                                                    <ul>{{ p.CapacityGroups.all|unordered_list }}</ul>
+                                                </div>
+                                            {% else %}
+                                                This promotion is relevant for students of all capacity groups.
+                                            {% endif %}
+                                            <span class="promotionmessage margin10">{{ p.Text }}</span>
+                                            {% if p.Url %}
+                                                <div class="margin10 clear-float">Visit webpage:
+                                                    <a href="{{ p.Url }}" target="_blank" title="{{ p.Organization }}">
+                                                        {{ p.Url }}
+                                                    </a>
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                        <hr/><br/>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        {% endif %}
+
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div id="footer">
+    <a id="toggleSidebarButton" class="button place-right" title="Show/hide the sidebar">
+        <span id='toggleSidebarButtonIcon' class="mif-chevron-right icon"></span>
+    </a>
+    <div class="place-left">
+        {% if request.user.is_authenticated %}
+            <form method="post" action="{% url 'index:feedback_form' %}">
+                {% csrf_token %}
+                <input type="hidden" id="id_Reporter" name="id_Reporter" value="{{ request.user.id }}">
+                <input type="hidden" id="id_Url" name="id_Url" value="{{ request.path }}">
+                <button class="button primary">Feedback</button>
+            </form>
+        {% endif %}
+    </div>
+
+    <div class="place-right text-small">
+        <div class="cell place-left padding10"><a href="{% url 'index:about' %}" title="Kolibri Solutions" class="fg-black">By Kolibri Solutions 2016-2019</a></div>
+        <div class="cell place-left padding10">Currently deployed: {% get_hash %}</div>
+    </div>
+</div>
+{% block scripts %}
+    <script src="{% url 'js-error-handler-js' %}"></script>
+    {# for js error logging, load first to capture load errors #}
+    <script src="{% static "js/jquery-3.2.1.min.js" %}"></script>
+    {# fancy dropdown select #}
+    <script src="{% static "js/select2.min.js" %}"></script>
+    {# for top horizontal scroll bar #}
+    <script src="{% static "js/jquery.doubleScroll.min.js" %}"></script>
+    {# datatables #}
+    <script src="{% static "js/datatables.min.js" %}"></script>
+    {#    <script src="{% static "js/jquery.dataTables.yadcf.js" %}"></script>#}
+    <script src="{% static "js/jquery.dataTables.yadcf.min.js" %}"></script>
+    <script src="{% static "js/dt_wrapper.js" %}"></script>
+    {# metro #}
+    <script src="{% static "js/metro.min.js" %}"></script>
+    {# custom #}
+    <script src="{% static "js/custom.js" %}"></script>
+
+    {% if hide_sidebar %}
+        <script>
+            $(function () {
+                hideSidebarFast();
+            });
+        </script>
+    {% endif %}
+{% endblock %}
+</body>
+</html>

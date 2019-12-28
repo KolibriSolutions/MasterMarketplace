@@ -1,0 +1,12 @@
+{% extends 'GenericForm.html' %}
+
+{% block formheader %}
+{% if project.Apply == "system" %}
+    <h3>Applied students:</h3>
+    <ul>
+    {% for application in applications %}
+    <li>{{ application.Student.usermeta.get_nice_name }}:{{ application.Student.usermeta.Studentnumber }}</li>
+    {% endfor %}
+{% endif %}
+</ul>
+{% endblock %}

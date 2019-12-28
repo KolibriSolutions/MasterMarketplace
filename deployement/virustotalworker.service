@@ -1,0 +1,18 @@
+[Unit]
+Description=virustotal service to run marketplace
+After=network.target
+After=postgresql.service
+After=nginx.service
+After=daphne.service
+
+[Service]
+Type=simple
+RuntimeDirectory=daphne
+PIDFile=/run/daphne/pid
+User=django
+Group=django
+WorkingDirectory=/home/django/MasterMarketPlace
+ExecStart=/home/django/mastermarketplacenv/bin/python manage.py runworker virustotal
+ExecStop=/bin/kill -s TERM $MAINPID
+[Install]
+WantedBy=multi-user.target

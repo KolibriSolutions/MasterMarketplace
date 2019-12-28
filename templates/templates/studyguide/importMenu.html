@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+
+{% block body %}
+    <h1>Choose Course Imports</h1>
+    <table class="table bordered striped hovered datatable">
+        <thead>
+        <tr>
+            <th>Course Code</th>
+            <th>Type</th>
+            <th data-searchable="false" data-searchable="false">Action</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for course in courses %}
+            <tr>
+                <td>
+                    <a href="https://osiris.tue.nl/osiris_student_tueprd/OnderwijsCatalogusSelect.do?selectie=cursus&collegejaar=2017&cursus={{ course.code }}">{{ course.code }}</a>
+                </td>
+                <td>{{ course.type }}</td>
+                <td><a href="{% url 'studyguide:importfromosirisdirect' course.code %}" class="button rounded primary">Import</a>
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}
+
+{% block scripts %}
+    {{ block.super }}
+    <script>
+        $(document).ready(function () {
+            $('.datatable').dt_wrapper([
+                {column_number: 1, filter_type: "select"},
+            ]);
+        });
+    </script>
+{% endblock %}

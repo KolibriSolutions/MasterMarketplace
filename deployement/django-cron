@@ -1,0 +1,7 @@
+# MasterMarketplace specific cron jobs
+#
+PYTHON=/home/django/mastermarketplacenv/bin/python
+INSTANCE=/home/django/MasterMarketPlace
+
+# Sessions table cleanup
+0       0       *       *       *       root    cd $INSTANCE && $PYTHON $INSTANCE/manage.py clearsessions

@@ -1,0 +1,8 @@
+{% extends 'GenericForm.html' %}
+{% block formheader %}
+<h2>Approval Status: {{ approved }}</h2>
+    <br/><br/>
+    <a href="{% url 'registration:courseplanner' %}" class="button primary rounded">Course Planner</a>
+    <a href="{% url 'registration:approvalform' %}" class="button primary rounded" >Download Filled Approval Form</a></a>
+    <a href="{% url 'registration:requestapproval' %}" class="button primary rounded">Request Approval</a>
+{% endblock %}

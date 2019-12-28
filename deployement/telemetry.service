@@ -1,0 +1,19 @@
+[Unit]
+Description=gathers telemetry from marketplace system
+After=network.target
+After=nginx.service
+
+[Service]
+Type=simple
+RuntimeDirectory=djangoTelemetry
+PIDFile=/run/djangoTelemetry/pid
+User=django
+Group=django
+WorkingDirectory=/home/django/MasterMarketPlace/telemetry_cli/
+ExecStart=/home/django/mastermarketplacenv/bin/python telemetry.py --mode production
+ExecStop=/bin/kill -s TERM $MAINPID
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block body %}
+    <h1>Project: {{ Project.Title }}</h1>
+    {% autoescape off %}
+        <p>{{ Message }}</p>
+    {% endautoescape %}
+    <p>
+        {% if Project %}{# for in case this page is requested after a delete. #}
+            <a href="{% url "projects:addfile" 'i' Project.pk %}">
+                <button class="button primary"><span class="mif-image"></span>Add image to project</button>
+            </a>
+            <a href="{% url "projects:editfile" 'i' Project.pk %}">
+                <button class="button primary"><span class="mif-images"></span>Edit images of this project</button>
+            </a>
+            <a href="{% url "projects:addfile" 'a' Project.pk %}">
+                <button class="button primary"><span class="mif-file-pdf"></span>Add attachment to project</button>
+            </a>
+            <a href="{% url "projects:editfile" 'a' Project.pk %}">
+                <button class="button primary"><span class="mif-file-pdf"></span>Edit attachments of this project
+                </button>
+            </a>
+            <a href="{% url 'projects:details' Project.pk %}">
+                <button class="button primary">View this project</button>
+            </a><br/>
+        {% endif %}
+        <a href="{% url 'projects:chooseedit' %}">
+            <button class="button primary"><span class="mif-list"></span>View all my projects</button>
+        </a>
+    </p>
+{% endblock %}

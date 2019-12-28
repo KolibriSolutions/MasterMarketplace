@@ -1,0 +1,233 @@
+{% extends "base.html" %}
+{% load static %}
+{% load custom_filters %}
+{% load index_tags %}
+{% load project_tags %}
+{% block body %}
+    <h1>
+        {% if title %}
+            {{ title|capfirst }}
+        {% else %}
+            {% if user|has_group:'studyadvisors' %}
+                All
+            {% else %}
+                My
+            {% endif %}
+            {% if status_filters %}
+                {{ status_filter|default_if_none:"" }}
+            {% endif %}
+            projects
+        {% endif %}
+    </h1>
+    {% if status_filters %}
+        <div class="tabcontrol">
+            <ul class="tabs">
+                {% for ts in status_filters %}
+                    <li {% if ts == status_filter %}class="active" {% endif %}><a href="{% if ts == status_filter %}#{% else %}../{{ ts }}{% endif %}">{{ ts }}</a></li>
+                {% endfor %}
+            </ul>
+        </div>
+    {% endif %}
+    <a href="#" id="studentinfo" class="columnToggle button"><span></span> student info</a>
+    <a href="#" id="projectinfo" class="columnToggle button"><span></span> project info</a>
+
+    <div class="double-scroll">
+        <table class="table datatable striped">
+            <thead>
+            <tr>
+                <th><span class="mif-star-half icon"></span></th>
+                <th data-priority="1">Name</th>
+                <th data-visible='false' class="projectinfo">Group</th>
+                <th>Responsible staff</th>
+                <th data-visible='false' class="projectinfo">Assistant(s)</th>
+                <th data-visible='false' class="projectinfo">Type</th>
+                <th data-visible='false' class="studentinfo">Applied students</th>
+                <th data-visible='false' class="studentinfo">Distributed students</th>
+                <th>Status</th>
+                <th data-priority="2">Edit</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for project in projects %}
+                <tr>
+                    <td>
+                    <span id="fav-{{ project.pk }}"
+                          class="star-favorite mif-star-{% if project.pk in favorite_projects %}full{% else %}empty{% endif %} icon">
+                    </span>
+                    </td>
+                    <td>
+                        <a href="{% url 'projects:details' project.id %}">{{ project.Title }}</a><br/>
+                        {{ project|project_labels }}
+                    </td>
+                    <td>{{ project.Group }} {% if project.SecondaryGroup.exists %}({{ project.SecondaryGroup.all|print_list }}){% endif %}</td>
+                    <td>
+                        <a href="mailto:{{ project.ResponsibleStaff.email }}">
+                            {{ project.ResponsibleStaff.usermeta.get_nice_name }}
+                        </a>
+                    </td>
+                    <td>
+                        <ul>
+                            {% for a in project.Assistants.all %}
+                                <li><a href="mailto:{{ a.email }}">{{ a.usermeta.get_nice_name }}</a></li>
+                            {% endfor %}
+                        </ul>
+                    </td>
+                    <td>
+                        {{ project.get_Type_display }}
+                    </td>
+                    <td>
+                        <ul>
+                            {% for a in project.applications.all %}
+
+                                <li>
+                                    {#                        <span data-role="hint"#}
+                                    {#                              data-hint-background="bg-gray"#}
+                                    {#                              data-hint-color="fg-white"#}
+                                    {#                              data-hint-mode="2"#}
+                                    {#                              data-hint="#}
+                                    {#                                {% if a %}#}
+                                    {#                                    This student has applied to this project with priority {{ a.Priority }}#}
+                                    {#                                {% else %}#}
+                                    {#                                    The student did not apply for this project.#}
+                                    {#                                {% endif %}">#}
+                                    {#                            <span class='tag info'>#}
+                                    {#                            {% if a %}#}
+                                    {#                                {{ a.Priority }}#}
+                                    {#                            {% else %}#}
+                                    {#                                -#}
+                                    {#                            {% endif %}#}
+                                    {#                        </span>#}
+                                    {#                        </span>#}
+                                    <a href="mailto:{{ a.Student.email }}">{{ a.Student.usermeta.get_nice_name }}</a>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    </td>
+                    <td>
+                        <ul>
+                            {% for a in project.distributions.all %}
+                                <li>
+                                    {#                        <span data-role="hint"#}
+                                    {#                            data-hint-background="bg-gray"#}
+                                    {#                            data-hint-color="fg-white"#}
+                                    {#                            data-hint-mode="2"#}
+                                    {#                            data-hint="#}
+                                    {#                                {% if a.Application %}#}
+                                    {#                                    This student has applied to this project with priority {{ a.Application.Priority }}#}
+                                    {#                                {% else %}#}
+                                    {#                                    The student did not apply for this project.#}
+                                    {#                                {% endif %}">#}
+                                    {#                            <span class='tag info'>#}
+                                    {#                            {% if a.Application %}#}
+                                    {#                                {{ a.Application.Priority }}#}
+                                    {#                            {% else %}#}
+                                    {#                                -#}
+                                    {#                            {% endif %}#}
+                                    {#                        </span>#}
+                                    {#                        </span>#}
+                                    <a href="mailto:{{ a.Student.email }}">{{ a.Student.usermeta.get_nice_name }}</a>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    </td>
+                    <td data-sort="status{{ project.Status }}">
+                        {{ project.get_Status_display }}{% if project.Status == 3 %},
+                            {{ project.get_Progress_display|default:"not yet started" }}
+                        {% endif %}
+                    </td>
+                    <td>
+                        {#                    <a href="{% url 'projects:details' project.id %}" class="button primary">View</a>#}
+                        {% if project|can_edit_project:user %}
+                            <a href="{% url 'projects:edit' project.id %}" class="button info"><span
+                                    class="mif-pencil"></span>Edit data</a>
+                            {#                    <a href="{% url 'projects:editfile' 'i' project.id %}" class="button info"><span class="mif-images"></span>Edit images</a>#}
+                            {#                    <a href="{% url 'projects:editfile' 'a' project.id %}" class="button info"><span class="mif-file-pdf"></span>Edit attachments</a>#}
+                        {% endif %}
+                        {% if project|can_distribute_project:user %}
+                            <a href="{% url 'projects:distribute' project.id %}"
+                               class="button info">Distributions</a>
+                        {% endif %}
+                        {% if project|can_set_progress_project:user %}
+                            <a href="{% url 'projects:progress' project.id %}" class="button info">Progress</a>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}
+{% block scripts %}
+    {{ block.super }}
+    <script src="{% static "js/websocketbridge.js" %}"></script>
+    <script src="{% static "js/favorite.js" %}"></script>
+    <script>
+        $(document).ready(function () {
+            // custom sort for favorite button, https://datatables.net/examples/plug-ins/dom_sort.html
+            $.fn.dataTable.ext.order['dom-order-favorite'] = function (settings, col) {
+                return this.api().column(col, {order: 'index'}).nodes().map(function (td, i) {
+                    return $('span', td).hasClass('mif-star-full') ? '1' : '0';
+                });
+            };
+            // make cols array for datatables
+            const l = $("table.datatable th").length;
+            const cols = new Array(l);
+            for (var i = 0; i < l; i++) {
+                cols[i] = null;
+            }
+            // set first column to custom sort function
+            cols[0] = {"orderDataType": "dom-order-favorite"};
+            // call datatables with yadcf and the cols array.
+            var dt = $('.datatable').dt_wrapper([
+                    {column_number: 2, filter_type: "select", filter_match_mode: 'exact'},
+                    {column_number: 3, filter_type: "select", column_data_type: 'html'},  // to parse mailto links
+                    {
+                        column_number: 4,
+                        filter_type: "select",
+                        column_data_type: 'html',
+                        html_data_type: 'selector',
+                        html_data_selector: 'li'
+                    }, //to parse ul-li
+                    {column_number: 5, filter_type: "select"},  //type
+                    {
+                        column_number: 6,
+                        filter_type: "select",
+                        column_data_type: 'html',
+                        html_data_type: 'selector',
+                        html_data_selector: 'li'
+                    }, //to parse ul-li
+                    {column_number: 8, filter_type: "select"},
+                ], cols
+            );
+
+            // event handlers for hide/show buttons
+            $(".columnToggle").click(function () {
+                //reset width:
+                $(".datatable").width("100%");
+                // Get the column API object
+                var columns = dt.columns("." + $(this).attr('id'));
+                // Toggle the visibility
+                if (columns.visible()[0]) {
+                    columns.visible(false);
+                    $(this).find("span").text("Show");
+                } else {
+                    columns.visible(true);
+                    $(this).find("span").text("Hide")
+                }
+                //trigger resize event for double-scroll because table width has changed.
+                $('.double-scroll').trigger('resize.doubleScroll');
+            });
+
+            //set default text for columns buttons, because datatables saves visibility in state.
+            var but = $('a.columnToggle');
+            but.each(function (i) {
+                var vis = dt.columns("." + $(this).attr('id')).visible()[0];
+                if (vis) {
+                    $(this).find("span").text("Hide")
+                } else {
+                    $(this).find("span").text("Show")
+                }
+            })
+        });
+    </script>
+{% endblock %}

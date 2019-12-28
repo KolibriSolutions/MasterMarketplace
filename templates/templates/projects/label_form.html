@@ -1,0 +1,25 @@
+{% extends 'GenericForm.html' %}
+
+{% block formheader %}
+{#    All colors: #}
+{#    {% for c in colors %}#}
+{#        <span class="project_label {{ c.0 }}">{{ c.1 }}</span>#}
+{#    {% endfor %}#}
+    <p>
+    Preview:&nbsp; <span class="project_label {{ label.Color }}" id="label-preview">{{ label.Name }}</span>
+    </p>
+{% endblock %}
+
+{% block scripts %}
+    {{ block.super }}
+    <script>
+        $(document).ready(function () {
+            $('input#id_Name').change(function () {
+                $('#label-preview').text(this.value)
+            });
+            $('select').on("select2:select", function (e) {
+                $('#label-preview').removeClass().addClass('project_label ' + e.params.data.id);
+            });
+        });
+    </script>
+{% endblock %}

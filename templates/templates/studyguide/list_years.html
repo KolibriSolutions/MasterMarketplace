@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% load custom_filters %}
+
+{% block body %}
+    <h1>Years list</h1>
+    <br/>
+    <table class="table bordered striped hovered">
+        <thead>
+        <tr>
+            <th>Year</th>
+            <th>Courses</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for year in years %}
+            <tr>
+                <td>{{ year.Name }}</td>
+                <td>
+                    <a href="{% url 'studyguide:courseslist' year.pk %}" class="button primary">List Courses</a>
+                    <a href="{% url 'studyguide:pathslist' year.pk %}" class="button primary">List Specialization
+                        Paths</a>
+                    {% if user.is_superuser %}
+                        <a href="{% url 'admin:timeline_year_change' year.pk %}" class="button warning">Admin edit</a>
+                    {% endif %}
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

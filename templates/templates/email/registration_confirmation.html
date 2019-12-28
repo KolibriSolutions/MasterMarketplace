@@ -1,0 +1,16 @@
+{% extends 'email/base_email.html' %}
+
+{% block header %}
+Hi {{ student.usermeta.get_nice_name }},<br/><br/>
+{% endblock %}
+
+{% block body %}
+This is a confirmation of your courses registration. Below is your submitted information.
+{% include 'email/registration_info.html' %}
+<br/><br/>
+{% if registration.Approved %}
+Your registration has been approved.
+{% else %}
+Your registration has not been approved yet. The academic advisor has been notified and will look at it. For further details please contact him.
+{% endif %}
+{% endblock %}

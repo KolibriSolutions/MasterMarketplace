@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+{% load index_tags %}
+
+{% block body %}
+    <h1>Capacity Groups</h1>
+    <p>
+        {% if user|has_group:"studyadvisors;directors" %}
+            <a href="{% url 'studyguide:addcapacitygroup' %}"
+               class="button primary rounded">Add</a>
+        {% endif %}
+    </p>
+
+    <table class="table bordered striped hovered datatable">
+        <thead>
+        <tr>
+            <th>Code</th>
+            <th>Name</th>
+            <th>Paths</th>
+            <th>Head</th>
+            <th data-searchable="false" data-sortable="false">Action</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for group in groups %}
+            <tr>
+                <td>{{ group.ShortName }}</td>
+                <td>{{ group.FullName }}</td>
+                <td>
+                    <ul>{% for path in group.programs.all %}
+                        <li>
+                            <a href="{% url 'studyguide:detailmasterprogram' path.pk %}">{{ path }}</a>
+                        </li>
+                    {% endfor %}</ul>
+                </td>
+                <td>{{ group.Head.usermeta.get_nice_name }}</td>
+                <td>
+                    <a href="{% url 'studyguide:detailcapacitygroup' group.pk %}"
+                       class="button primary rounded">Details</a>
+                    {% if user|has_group:"studyadvisors;directors" %}
+                        <a href="{% url 'studyguide:editcapacitygroup' group.pk %}"
+                           class="button warning rounded">Edit</a>
+                        <a href="{% url 'studyguide:deletecapacitygroup' group.pk %}"
+                           class="button danger rounded">Delete</a>
+                    {% endif %}
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}
+
+{% block scripts %}
+    {{ block.super }}
+    <script>
+        $(document).ready(function () {
+            $('.datatable').dt_wrapper()
+        });
+    </script>
+{% endblock %}

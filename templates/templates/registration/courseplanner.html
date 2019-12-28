@@ -1,0 +1,366 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load registration_tags %}
+
+{% block stylesheets %}
+    <link href="{% static "css/jquery-ui.min.css" %}" rel="stylesheet">
+    <style>
+        .dragblock {
+            list-style: none;
+            min-height: 5em;
+            padding: 0;
+            margin: 0;
+            background: lightblue;
+        }
+
+        .dragbutton {
+            height: 5em;
+            width: 100%;
+        }
+
+        .dragblock-placeholder {
+            height: 5em;
+        }
+
+        td {
+            vertical-align: top;
+        }
+
+        .quartile {
+            width: 24vw;
+            height: 20vh;
+        }
+    </style>
+
+{% endblock %}
+
+{% block body %}
+    <h1>Course Planner</h1>
+    <p>
+        {{ registration.Student.usermeta.get_nice_name }} from {{ registration.get_Origin_display }}{% if registration.Institute %} ({{ registration.Institute }}) {% endif %}, started in {{ registration.Cohort }}<br/>
+        Specialization path: {{ registration.Program }}
+    </p>
+    <table class="table">
+        <tr>
+            {% if edit %}
+                <a href="{% url 'registration:registrationform' %}" class="button info"><span class="mif-arrow-left"></span> Back to registration</a>
+            {% else %}
+                <a href="{% url 'registration:listall' %}" class="button info"><span class="mif-arrow-left"></span> Back to registrations</a>
+            {% endif %}
+
+            <td style="width:80%;">
+                {% if edit %}
+                    {% if years != 9 %}
+                        <button class="button primary" onclick="add_year();">Add Year</button>{% endif %}
+                    {% if years != 2 %}
+                        <button class="button primary" onclick="remove_year();">Remove Year</button>{% endif %}
+                    <button class="button" onclick="validateall();">Validate</button>
+                    <button class="button success" onclick="saveall();">Save Planning</button>
+                    <a href="{% url 'registration:addotherdep' %}" class="button primary">Add other department course</a>
+                    <a href="{% url 'registration:addotheruni' %}" class="button primary">Add course outside TU/e</a>
+                {% endif %}
+                <table class="table border bordered">
+                    <tr>
+                        <td></td>
+                        <td>Q1</td>
+                        <td>Q2</td>
+                        <td>Q3</td>
+                        <td>Q4</td>
+                    </tr>
+                    {% for Y in yearrange %}
+                        <tr>
+                            <td style="width:5vw;">Y{{ Y }}</td>
+                            {% for i in "x"|rjust:"4" %}
+                                <td class="quartile">
+                                    <ul id="Y{{ Y }}Q{{ forloop.counter }}" class="dragblock quartileblock plannedcourseblock" data-quartile="Y{{ Y }}Q{{ forloop.counter }}" style="min-height: 100%;">
+                                    </ul>
+                                </td>
+                            {% endfor %}
+                        </tr>
+                    {% endfor %}
+                </table>
+            </td>
+            <td style="width:20%;">
+                <input id="course-search-box" style="width:99%" type="text" placeholder="Search"/><br/>
+                Quartile:
+                <div class="input-control select">
+                    <select id="course-quartile-select">
+                        <option></option>
+                        <option>1</option>
+                        <option>2</option>
+                        <option>3</option>
+                        <option>4</option>
+                    </select>
+                </div>
+                Timeslot:
+                <div class="input-control select">
+                    <select id="course-timeslot-select">
+                        <option></option>
+                        <option>A</option>
+                        <option>B</option>
+                        <option>C</option>
+                        <option>D</option>
+                        <option>E</option>
+                    </select>
+                </div>
+                <div class="accordion" data-role="accordion">
+                    {% for type in data %}
+                        <div class="frame ">
+                            <div class="heading">{{ type.name }}</div>
+                            <div class="content">
+                                <ul id="coursechoices_{{ type.machinename }}" class="dragblock unboundblock unplannedcourseblock">
+                                    {% for course in type.courses %}
+                                        <li class="ui-state-default" data-quartiles="{{ course.quartiles }}" data-timeslots="{{ course.timeslots }}" data-course="{{ course.code }}" data-search-term="{{ course.name|lower }}">
+                    <span data-role="hint"
+                          data-hint-position="top"
+                          data-hint="{{ course.info }}"
+                    >
+                    <div class="button primary" style="width:100%;height:100%;padding:5px;">
+                        <span class='tag warning wrongQ' style="display:none;width:100%;">Course is in wrong quartile</span>
+                        {{ course.name }}
+                        {% if course.link %}
+                            <a href="{{ course.link }}" target="_blank"><span class="mif-info"></span></a>
+                        {% endif %}
+                        <span class="addButton add_course_button" data-quartile="{{ course.quartiles.0 }}"><span class="mif-plus"></span></span>
+                    </div>
+                    </span>
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </td>
+        </tr>
+    </table>
+{% endblock %}
+
+{% block scripts %}
+    {{ block.super }}
+    <script src="{% static "js/jquery-ui.min.js" %}"></script>
+    <script src="{% static "js/csrf-ajax.js" %}"></script>
+    <script>
+        $(document).ready(function () {
+            {% if edit %}
+                $(function () {
+                    $(".unboundblock").sortable({
+                        connectWith: "ul",
+                        placeholder: "dragblock-placeholder",
+                        receive: function (event, ui) {
+                            $(this).find('span.addButton').show();
+                        }
+                    }).disableSelection();
+                });
+
+                {% for y in yearrange %}
+                    {% for i in "x"|rjust:"4" %}
+                        $(function () {
+                            $("#Y{{ y }}Q{{ forloop.counter }}").sortable({
+                                connectWith: "ul",
+                                placeholder: "dragblock-placeholder",
+                                receive: function (event, ui) {
+                                    var course_quartiles = String($(ui.item[0]).data('quartiles'));
+                                    var target_quartile = String($(event.target).data('quartile'));
+                                    $(this).find('span.addButton').hide();
+                                    validateall();
+                                }
+                            }).disableSelection();
+                        });
+                    {% endfor %}
+                {% endfor %}
+
+            {% endif %}
+            fetchall();
+        });
+
+        function getdata() {
+            var quartileblocks = document.getElementsByClassName("quartileblock");
+            var data = {};
+            for (var i = 0; i < quartileblocks.length; i++) {
+                var codes = [];
+                for (var j = 0; j < quartileblocks[i].children.length; j++) {
+                    codes.push($(quartileblocks[i].children[j]).data('course'));
+                }
+                data[$(quartileblocks[i]).data('quartile')] = codes;
+            }
+
+            return data;
+        }
+        {% if edit %}
+            function saveall() {
+                var data = JSON.stringify(getdata());
+                var suc = false;
+                $.ajax({
+                    type: "POST",
+                    url: "{% url 'registration:registration_api:api_save_planning' %}",
+                    async: false,
+                    data: {
+                        'planning': data,
+                        'apikey': "{{ user|create_registration_key }}"
+                    },
+                    success: function (data) {
+                        if (data.type === 'success') {
+                            $.Notify({
+                                caption: "Data Saved!",
+                                content: data.message,
+                                type: data.type
+                            });
+                            suc = true;
+                        } else {
+                            $.Notify({
+                                caption: "Error Occurred!",
+                                content: data.message,
+                                type: data.type
+                            });
+                        }
+                    }
+                }).fail(function () {
+                    $.Notify({
+                        caption: "Error Occurred!",
+                        content: "Data could not be saved. Please refresh the page (f5).",
+                        type: "error"
+                    });
+                });
+                return suc;
+            }
+
+            function add_year() {
+                if (saveall()) {
+                    $.post("{% url 'registration:registration_api:api_add_year' %}",
+                        {
+                            'apikey': "{{ user|create_registration_key }}"
+                        },
+                        function (data) {
+                            $.Notify({
+                                caption: "Add year",
+                                content: data.message,
+                                type: data.type
+                            });
+                            if (data.type === 'success') {
+                                location.reload();
+                            }
+                        }, 'json');
+                }
+            }
+            function remove_year() {
+                if (saveall()) {
+                    $.post("{% url 'registration:registration_api:api_remove_year' %}",
+                        {
+                            'apikey': "{{ user|create_registration_key }}"
+                        },
+                        function (data) {
+                            $.Notify({
+                                caption: "Remove year",
+                                content: data.message,
+                                type: data.type
+                            });
+                            if (data.type === 'success') {
+                                location.reload();
+                            }
+                        }, 'json');
+                }
+            }
+
+            $('.add_course_button').click(function(){
+                var blk = $(this).parent().parent().parent();
+                console.log(blk);
+                var quartile = $(this).data('quartile');
+                console.log(quartile);
+                blk.find('span.addButton').hide();
+                $("#Y1Q" + quartile)[0].append(blk[0]);
+                validateall();
+            });
+
+            ///save all before leaving page.
+            {#window.onbeforeunload = function () {#}
+            {#    saveall()#}
+            {# };#}
+        {% endif %}
+        function fetchall() {
+            $.post("{% url 'registration:registration_api:api_get_planning' %}", {
+                    {% if edit %}
+                        'apikey': "{{ user|create_registration_key }}"
+                    {% else %}
+                        'view_user': "{{ registration.Student.pk }}"
+                    {% endif %}
+                },
+
+                function (data) {
+                    $.each(data, function (quartile, courses) {
+                        $.each(courses, function (index, course) {
+                            var blk = $("ul.unplannedcourseblock").find("[data-course='" + course + "']");
+                            blk.find('span.addButton').hide();
+                            $("#" + quartile)[0].append(blk[0]);
+                        });
+                    });
+                    validateall();
+                    $.Notify({
+                        caption: 'Data Loaded',
+                        content: 'Loaded saved plan.',
+                        type: 'success'
+                    })
+                }, 'json')
+        }
+
+        function validateall() {
+            $("ul.quartileblock").each(function () {
+                var target_quartile = String($(this).data('quartile'));
+                for (var j = 0; j < this.children.length; j++) {
+                    var course_quartiles = String($(this.children[j]).data('quartiles'));
+                    if (course_quartiles.indexOf(target_quartile.charAt(3)) === -1 &&
+                        course_quartiles.indexOf('JAAR') === -1) {
+                        $.Notify({
+                            caption: 'Warning',
+                            content: 'course ' + $(this.children[j]).data('course') + ' is only given in quartile(s) ' + course_quartiles,
+                            type: 'warning'
+                        });
+                        $(this.children[j]).find("span.wrongQ").show();
+                    } else {
+                        $(this.children[j]).find("span.wrongQ").hide();
+                    }
+                }
+            });
+        }
+
+        $('#course-search-box').on('change input', function () {
+            $('#course-quartile-select').val('');
+            $('#course-timeslot-select').val('');
+            var searchTerm = $(this).val().toLowerCase();
+            $('ul.unplannedcourseblock>li').each(function () {
+                if ($(this).filter('[data-search-term *= ' + searchTerm + ']').length > 0 || searchTerm.length < 1) {
+                    $(this).show();
+                } else {
+                    $(this).hide();
+                }
+            });
+        });
+
+        $('#course-quartile-select').on('change input', function () {
+            $('#course-search-box').val('');
+            $('#course-timeslot-select').val('');
+            var searchTerm = $(this).val().toLowerCase();
+            $('ul.unplannedcourseblock>li').each(function () {
+                if ($(this).filter('[data-quartiles *= ' + searchTerm + ']').length > 0 || searchTerm.length < 1) {
+                    $(this).show();
+                } else {
+                    $(this).hide();
+                }
+            });
+        });
+
+        $('#course-timeslot-select').on('change input', function () {
+            $('#course-quartile-select').val('');
+            $('#course-search-box').val('');
+            var searchTerm = $(this).val().toUpperCase();
+            $('ul.unplannedcourseblock>li').each(function () {
+                if ($(this).filter('[data-timeslots *= ' + searchTerm + ']').length > 0 || searchTerm.length < 1) {
+                    $(this).show();
+                } else {
+                    $(this).hide();
+                }
+            });
+        });
+
+    </script>
+{% endblock %}

@@ -1,0 +1,10 @@
+{% extends 'email/base_email.html' %}
+
+{% block header %}
+Hi {{ student.usermeta.get_nice_name }},<br/><br/>
+{% endblock %}
+
+{% block body %}
+Your courses registration has just been disapproved by the academic advisor. Below is your submitted information.<br/><br/>
+{% include 'email/registration_info.html' %}
+{% endblock %}

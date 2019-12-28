@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% load index_tags %}
+
+{% block body %}
+<h1>Registration Deadlines</h1>
+<h3>Deadlines:</h3>
+<table class="table">
+<tr>
+    <td>First Deadline:</td>
+    <td>{{ first }}</td>
+    {% if user|has_group:'studyadvisors' %}
+    <td><a href="{% url 'registration:deadlineform' 1 %}" class="button primary rounded">Set</a></td>
+    {% endif %}
+</tr>
+<tr>
+    <td>Second Deadline:</td>
+    <td>{{ second }}</td>
+    {% if user|has_group:'studyadvisors' %}
+    <td><a href="{% url 'registration:deadlineform' 2 %}" class="button primary rounded">Set</a></td>
+    {% endif %}
+</tr>
+</table>
+<h3>{{ description.Title }}</h3>
+{{ description.Description }}
+    {% if user|has_group:'studyadvisors' %}
+    <td><a href="{% url 'registration:deadlinedescription' %}" class="button primary rounded">Edit</a></td>
+    {% endif %}
+
+{% endblock %}

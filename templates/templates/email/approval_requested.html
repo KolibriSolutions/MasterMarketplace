@@ -1,0 +1,11 @@
+{% extends 'email/base_email.html' %}
+
+{% block header %}
+Hi studyadvisor,<br/><br/>
+{% endblock %}
+
+{% block body %}
+Student {{ student.usermeta.get_nice_name }} requested approval for registration.
+    Filled in form can be found <a href="{{ DOMAIN }}{% url 'registration:approvalformsupport' student.pk %}">here</a>.
+    Approval can be done directly through <a href="{{ DOMAIN }}{% url 'registration:listall' %}">this list</a>.
+{% endblock %}

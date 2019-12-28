@@ -1,0 +1,92 @@
+{# list own applications for students #}
+{% extends "base.html" %}
+{% block body %}
+    <h1>Applications and distributions</h1>
+    <p>After you made an application it is possible to retract the application except when you are distributed to the project.</p>
+    <p>If you apply to a project in an other specialization path than yours, contact the supervisor of the project to
+        discuss whether it is possible to do the project.</p>
+    <p>You can hand in files for your project when you are distributed to the project using the Files button.</p>
+    <table class="table datatable striped">
+        <thead>
+        <tr>
+            <th data-priority="1">Name<br/></th>
+            <th>Group<br/></th>
+            <th>Responsible staff<br/></th>
+            <th>Assistant(s)<br/></th>
+            <th>Applied</th>
+            <th>Distributed</th>
+            <th>Project status<br/></th>
+            <th data-searchable="false" data-sortable="false" data-priority="2">Edit</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for p in projlist %}
+            {% with project=p.project %}
+                <tr>
+                    <td><a href="{% url 'projects:details' project.id %}" class="capitalize">{{ project.Title }}</a>
+                    </td>
+                    <td>{{ project.Group }}</td>
+                    <td>
+                        <a href="mailto:{{ project.ResponsibleStaff.email }}">
+                            {{ project.ResponsibleStaff.usermeta.get_nice_name }}
+                        </a>
+                    </td>
+                    <td>
+                        <ul>
+                            {% for a in project.Assistants.all %}
+                                <li><a href="mailto:{{ a.email }}">{{ a.usermeta.get_nice_name }}</a></li>
+                            {% endfor %}
+                        </ul>
+                    </td>
+                    <td data-search="{{ p.application|yesno:"yes,no" }}">
+                        <span class="mif-{{ p.application|yesno:"checkmark fg-green,cross fg-red" }}"></span>
+                    </td>
+                    <td data-search="{{ p.distribution|yesno:"yes,no" }}">
+                        <span class="mif-{{ p.distribution|yesno:"checkmark fg-green,cross fg-red" }}"></span>
+                    </td>
+                    <td data-sort="status{{ project.Status }}">
+                        {% if project.Status == 3 %}
+                            {{ project.get_Progress_display|default:"not yet started" }}
+                        {% else %}
+                            Project is not (yet) public.
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if p.distribution %}
+                            <a href="{% url 'students:files' p.distribution.id %}">
+                                <button class="button primary">Files</button>
+                            </a>
+                        {% elif p.application %}
+                            <a href="{% url 'students:retractapplication' p.application.id %}">
+                                <button class="button danger">Retract application</button>
+                            </a>
+                        {% endif %}
+
+                    </td>
+                </tr>
+            {% endwith %}
+        {% endfor %}
+    </table>
+{% endblock %}
+{% block scripts %}
+    {{ block.super }}
+    <script>
+        $(document).ready(function () {
+
+            $('.datatable').dt_wrapper([
+                    {column_number: 1, filter_type: "select"},
+                    {column_number: 2, filter_type: "select", column_data_type: 'html'},
+                    {
+                        column_number: 3,
+                        filter_type: "select",
+                        column_data_type: 'html',
+                        html_data_type: 'selector',
+                        html_data_selector: 'li'
+                    }, //to parse ul-li
+                    {column_number: 4, filter_type: "select", html5_data: 'data-search'},
+                    {column_number: 5, filter_type: "select", html5_data: 'data-search'},
+                    {column_number: 6, filter_type: "select", html5_data: 'data-search'},  // to parse mailto links
+                ]
+            );
+        });
+    </script>  {% endblock %}

@@ -1,0 +1,525 @@
+{% extends "base.html" %}
+{% load static %}
+{% load index_tags %}
+{% load project_tags %}
+
+{% block body %}
+    {% if bodyhtml %}
+        {% autoescape off %}
+            {{ bodyhtml }}
+        {% endautoescape %}
+    {% else %}
+        <div class="grid">
+            <div class="row cells3">
+                <div class="cell colspan2">
+                    <h1 style="margin-bottom: 0;">{{ project.Title }}</h1>
+                    <h1 style="margin-bottom: 0; margin-top: 0;" class="capitalize">
+                        <small>
+                            <a href="mailto:{{ project.ResponsibleStaff.email }}">
+                                By {{ project.ResponsibleStaff.usermeta.get_nice_name }}
+                            </a>
+                        </small>
+                    </h1>
+                    {% if user.is_authenticated %}{# Not for anonymous users via sharelink #}
+                        {% is_favorite project user as fav %}
+                        <div class="margin5"><span id="fav-{{ project.pk }}"
+                                                   class="star-favorite mif-star-{{ fav|yesno:'full,empty' }} icon"></span>
+                        </div>
+                    {% endif %}
+
+                    {#                    <h3 style="margin-top: 0;">#}
+                    {#                        <small>Part of {{ project.Track.Name }}</small>#}
+                    {#                    </h3>#}
+                    {% if project.images.exists %}
+                        <div id="imageCarousel" class="carousel" data-role="carousel" data-height="300"
+                             data-controls="true" data-markers="false" data-auto="false">
+                            {% for image in project.images.all %}
+                                <div class="slide">
+                                    <a href="{% url "download:projectfile" "i" image.id %}" data-lightbox="lightbox1"
+                                       data-title="{{ image.Caption }}">
+                                        <img data-role="fitImage" data-format="fill"
+                                             src="{% url "download:projectfile" "i" image.id %}"
+                                             alt="{{ image.Caption }}"
+                                             referrerpolicy="no-referrer-when-downgrade"
+                                        />
+                                    </a>
+                                    <div class="imageCaption">
+                                        <h5>{{ image.Caption }}</h5>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                        <div id="imageCarousel_thumbs" class="padding10 bg-grayLighter align-center">
+                            {% for image in project.images.all %}
+                                <div class="thumb" data-index="{{ forloop.counter }}"><img
+                                        src="{% url "download:projectfile" "i" image.id %}"
+                                        data-role="fitImage"
+                                        data-format="fill"
+                                        alt="{{ image.Caption }}"
+                                        referrerpolicy="no-referrer-when-downgrade">
+                                </div>
+                            {% endfor %}
+                        </div>
+
+                    {% endif %}
+                    <h2>General description</h2>
+                    <p>{{ project.GeneralDescription|show_markdown_restricted }}</p>
+                    <h2>Students task description</h2>
+                    <p>{{ project.StudentsTaskDescription|show_markdown_restricted }}</p>
+                    {% if project.attachments.exists %}
+                        <h4>Attachments:</h4>
+                        {% for attachment in project.attachments.all %}
+                            <a href="{% url 'download:projectfile' 'a' attachment.id %}"
+                               class="command-button file-button" download
+                               referrerpolicy="no-referrer-when-downgrade">
+                                <span class="icon mif-file-pdf"></span>
+                                {% if attachment.Caption %}{{ attachment.Caption }}{% else %}Attachment
+                                    {{ forloop.counter }}{% endif %}
+                                <small>{{ attachment.OriginalName }}</small>
+                            </a>
+                        {% endfor %}
+                    {% endif %}
+                    <br/><br/>
+
+                    <p>
+                        {% comment %} Normal edit buttons for staff {% endcomment %}
+                        {% if user.is_authenticated %}
+                            {% if user|has_group:"any" %}
+                                <hr/>
+
+                                <br/>
+                                {% if project.public_visible %}
+                                    This project is visible for students.
+                                {% else %}
+                                    This project is hidden for students.
+                                {% endif %}
+                                <br/>
+                                {% if project.Progress == 2 %}
+                                    This project has its progress set to finished, so students can no longer apply to
+                                    it and it cannot be edited anymore.
+                                {% else %}
+                                    {% if project|can_distribute_project:user %}
+                                        <a href="{% url 'projects:distribute' project.id %}" class="button info">
+                                            <span class="mif-link"></span>
+                                            Distributions
+                                        </a>
+                                    {% endif %}
+                                {% endif %}
+                                <br/>
+                                {% if project|can_set_progress_project:user %}
+                                    <a class='button info' href={% url "projects:progress" project.id %}>
+                                        Set Progress
+                                    </a>
+                                {% endif %}
+                                <br/>
+
+                                {% if edit_lock != False %}
+                                    {{ edit_lock }}
+                                    <br/>
+                                {% else %}
+                                    <a class="button primary" href="{% url 'projects:edit' project.id %}">
+                                        <span class="mif-pencil"></span>Edit data
+                                    </a>
+                                    <a class="button primary" href="{% url 'projects:editfile' 'i' project.id %}">
+                                        <span class="mif-images"></span>Edit images
+                                    </a>
+                                    <a class="button primary" href="{% url 'projects:editfile' 'a' project.id %}">
+                                        <span class="mif-file-pdf"></span>Edit attachments
+                                    </a><br>
+                                    <br/>
+                                    {% if project|can_delete_project:user %}
+                                        <a class="button warning"
+                                           href="{% url 'projects:askdeleteproject' project.id %}">
+                                            <span class="mif-bin"></span>Delete</a>
+                                    {% endif %}
+                                {% endif %}
+                                <br/>
+                                {% if not user|has_group:'directors' %}
+                                    <a href="{% url 'projects:sharelink' project.id %}" class="button primary">
+                                        Get Sharelink
+                                    </a>
+                                {% endif %}
+                                {# possibly add a copy button, but copy is not used in mastermp yet. #}
+                                {% if user.is_superuser %}
+                                    <a class="button warning"
+                                       href="{% url 'admin:projects_project_change' project.pk %}">
+                                        Admin Edit
+                                    </a>
+                                {% endif %}
+                                </p>
+                                <p>
+                                    {% if  project|can_edit_project:user %}
+                                        <a href="{% url 'projects:upgradestatus' project.id %}" class="button success">
+                                            {% if project.Status == 1 %}
+                                                Upgrade to review by supervisor
+                                            {% elif project.Status == 2 %}
+                                                Publish
+                                            {% endif %}
+                                        </a>
+                                    {% endif %}
+                                    {% if project|can_downgrade_project:user %}
+                                        <a href="{% url 'projects:downgradestatusmessage' project.id %}" class="button danger">
+                                            {% if project.Status == 2 %}
+                                                Downgrade to draft by assistant
+                                            {% elif project.Status == 3 %}
+                                                Unpublish
+                                            {% endif %}
+                                        </a>
+
+                                    {% endif %}
+
+                                </p>
+                                {# policy violations and stats#}
+                                <hr/>
+                                {% if cpv %}
+                                    <h2>Content policy violations:</h2>
+                                    {% include 'projects/inc_cpv_proj.html' %}
+                                {% endif %}
+                                {% if project.Status == 3 %}
+                                    <h2>Statistics:</h2>
+                                    Number of unique views:
+                                    <div id="uniqueviewsnumber"></div>
+                                    {% include 'projects/inc_stats_proj.html' %}
+                                {% endif %}
+                            {% else %}
+                                {% comment %}
+                        Apply / retract buttons are inserted using a .format on the {} below.
+	                    {% endcomment %}
+                                {}
+                            {% endif %}
+                        {% endif %}
+                </div>
+
+                {# sidebar starts here #}
+                <div class="cell">
+                    <table class="table">
+                        <tr>
+                            <td>Type:</td>
+                            <td>{{ project.get_Type_display }}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Capacity group:</td>
+                            <td>{{ project.Group.FullName }}
+                                {% if project.Group.Head %}
+                                    (head: {{ project.Group.Head.usermeta.get_nice_name }}).
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% if project.SecondaryGroup.exists %}
+                            <tr>
+                                <td>Secondary capacity group(s):</td>
+                                <td>
+                                    <ul>
+                                        {% for group in project.SecondaryGroup.all %}
+                                            <li>
+                                                {{ group.FullName }}
+                                                {% if group.Head %}
+                                                    (head: {{ group.Head.usermeta.get_nice_name }}).
+                                                {% endif %}
+                                            </li>
+                                        {% endfor %}
+                                    </ul>
+                                </td>
+                            </tr>
+                        {% endif %}
+                        {% if project.ExternalStaff %}
+                            <tr>
+                                <td>External (non-TU/e) staff:</td>
+                                <td>
+                                    <ul>
+                                        {% for external in project.ExternalStaffList %}
+                                            <li>
+                                                {{ external|safe }}
+                                            </li>
+                                        {% endfor %}
+                                    </ul>
+                                </td>
+                            </tr>
+                        {% endif %}
+                        {% if project.Assistants.all %}
+                            <tr>
+                                <td>Assistants:</td>
+                                <td>
+                                    <ul>
+                                        {% for assistant in project.Assistants.all %}
+                                            <li>
+                                                <a href="mailto:{{ assistant.email }}">
+                                                    {{ assistant.usermeta.get_nice_name }}
+                                                </a>
+                                            </li>
+                                        {% endfor %}
+                                    </ul>
+                                </td>
+                            </tr>
+                        {% endif %}
+                        <tr>
+                            <td>Students needed:</td>
+                            <td>
+                                {% if project.NumStudentsMin == project.NumStudentsMax %}
+                                    {{ project.NumStudentsMax }}
+                                {% else %}
+                                    {{ project.NumStudentsMin }}-{{ project.NumStudentsMax }}
+                                {% endif %}
+                            </td>
+                        </tr>
+
+                        {% if project.Status != 3 %}
+                            <tr>
+                                <td>Status:</td>
+                                <td>
+                                    <ol>{% for opt in project.StatusOptions %}
+                                        <li class="{% if opt.0 == project.Status %}text-accent fg-navy{% else %}text-secondary{% endif %}">{{ opt.1 }}</li>{% endfor %}
+                                    </ol>
+                                </td>
+                            </tr>
+                        {% endif %}
+                        {% if project.StartDate %}
+                            <tr>
+                                <td>Starting from:</td>
+                                <td>{{ project.StartDate }}</td>
+                            </tr>
+                        {% endif %}
+                        {% if project.EndDate %}
+                            <tr>
+                                <td>Ending at:</td>
+                                <td>{{ project.EndDate }}</td>
+                            </tr>
+                        {% endif %}
+                        <tr>
+                            <td>
+                                Required specialization path:
+                            </td>
+                            <td>{% if project.Program.all %}
+                                <ul>
+                                    {% for p in project.Program.all %}
+                                        <li><a href="{% url 'studyguide:detailmasterprogram' p.id %}">{{ p }}</a></li>
+                                    {% endfor %}
+                                </ul>
+                            {% else %}No specific required{% endif %}
+                            </td>
+                        </tr>
+                        {% if project.RecommendedCourses.all %}
+                            <tr>
+                                <td>Recommended courses:</td>
+                                <td>
+                                    <ul>
+                                        {% for course in project.RecommendedCourses.all %}
+                                            <li><a href="{{ course.Info.detaillink }}">{{ course.Code }} - {{ course.Info.name }}</a></li>
+                                        {% endfor %}
+                                    </ul>
+                                </td>
+                            </tr>
+                        {% endif %}
+                        {% if project.SiteUrl %}
+                            <tr>
+                                <td>External Information:</td>
+                                <td><a href="{{ project.SiteUrl }}" class="button primary">External Site</a></td>
+                            </tr>
+                        {% endif %}
+                        {% if project.Labels.exists %}
+                            <tr>
+                                <td>Labels:</td>
+                                <td>{{ project|project_labels }}</td>
+                            </tr>
+                        {% endif %}
+                        <tr>
+                            <td>Created on:</td>
+                            <td>{{ project.Created.date }}</td>
+                        </tr>
+                        {% if project.Created.date != project.TimeStamp.date %}
+                            <tr>
+                                <td>Last edit on:</td>
+                                <td>{{ project.TimeStamp.date }}</td>
+                            </tr>
+                        {% endif %}
+                        {% if user|has_group:"studyadvisors" or user == project.ResponsibleStaff or user in project.Assistants.all  or project|group_administrator_status:user > 0 %}
+                            <tr>
+                                <td>Applications:</td>
+                                <td>
+                                    {% if project.applications.all %}
+                                        <ul>
+                                            {% for application in project.applications.all %}
+                                                <li>
+                                                    {#                                                    <span data-role="hint"#}
+                                                    {#                                                        data-hint-background="bg-gray"#}
+                                                    {#                                                        data-hint-color="fg-white"#}
+                                                    {#                                                        data-hint-mode="2"#}
+                                                    {#                                                        data-hint="This student has applied to this project with priority {{ application.Priority }}">#}
+                                                    {#                                                        <span class='tag info'>#}
+                                                    {#                                                        {{ application.Priority }}#}
+                                                    {#                                                    </span></span>#}
+                                                    {{ application.Student.usermeta.get_nice_name }}
+                                                </li>
+                                            {% endfor %}
+                                        </ul>
+                                    {% else %}
+                                        {% if project.Status == 3 %}
+                                            {% if project.Apply == "system" %}
+                                                None yet
+                                            {% else %}
+                                                Disabled
+                                            {% endif %}
+                                        {% else %}
+                                            {% if project.Apply == "system" %}
+                                                Students can apply after project is upgraded to status 'active'
+                                            {% else %}
+                                                Disabled
+                                            {% endif %}
+                                        {% endif %}
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% if project.Status == 3 %}
+                                <tr>
+                                    <td>Distributions:</td>
+                                    <td>
+                                        {% if project.distributions.all %}
+                                            <ul>
+                                                {% for distribution in project.distributions.all %}
+                                                    <li>
+                                                        {#                                                    <span data-role="hint"#}
+                                                        {#                                                        data-hint-background="bg-gray"#}
+                                                        {#                                                        data-hint-color="fg-white"#}
+                                                        {#                                                        data-hint-mode="2"#}
+                                                        {#                                                        data-hint="#}
+                                                        {#                                                            {% if distribution.Application %}#}
+                                                        {#                                                                This student has applied to this project with priority {{ application.Priority }}#}
+                                                        {#                                                            {% else %}#}
+                                                        {#                                                                The student did not apply for this project.#}
+                                                        {#                                                            {% endif %}">#}
+                                                        {#                                                        <span class='tag info'>#}
+                                                        {#                                                        {% if distribution.Application %}#}
+                                                        {#                                                            {{ distribution.Application.Priority }}#}
+                                                        {#                                                        {% else %}#}
+                                                        {#                                                            -#}
+                                                        {#                                                        {% endif %}#}
+                                                        {#                                                    </span>#}
+                                                        {#                                                    </span>#}
+                                                        {{ distribution.Student.usermeta.get_nice_name }}
+                                                    </li>
+                                                {% endfor %}
+                                            </ul>
+                                        {% else %}
+                                            None yet.
+                                            {# Distribute students to this project using the 'Distributions' button below.#}
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endif %}
+                            <tr>
+                                <td>Progress:</td>
+                                <td>
+                                    {% if project.Progress %}
+                                        {{ project.get_Progress_display }}
+                                    {% else %}
+                                        {% if project.Status == 3 %}
+                                            Not yet started. Students can apply to this project.
+                                        {% else %}
+                                            Students can see this project after it is upgraded to status 'active'.
+                                        {% endif %}
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endif %}
+                    </table>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+{% endblock %}
+{% block stylesheets %}
+    <link href="{% static "css/lightbox.css" %}" rel="stylesheet">
+    <style>
+        .thumb {
+            background: white;
+            padding: 4px;
+            display: inline-block;
+            height: 2.375rem;
+            width: 2.375rem;
+            border: 1px transparent solid;
+            cursor: pointer;
+        }
+
+        #imageCarousel, #imageCarousel_thumbs {
+            max-width: 600px;
+        }
+
+        .imageCaption {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background-color: rgba(58, 58, 58, .8);
+            color: white;
+            padding: 5px;
+        }
+    </style>
+{% endblock %}
+{% block scripts %}
+
+    {{ block.super }}
+    <script src="{% static "js/lightbox.js" %}"></script>
+    <script src="{% static "js/websocketbridge.js" %}"></script>
+    <script src="{% static 'js/Chart.bundle.min.js' %}"></script>
+    <script src="{% static "js/colors.js" %}"></script>
+    {% if user.is_authenticated %}{# not when using sharelink #}
+        <script src="{% static "js/favorite.js" %}"></script>
+    {% endif %}
+    <script>
+        $(document).ready(function () {
+            {% if project.images.all|length > 1 %}
+                var icar = $('#imageCarousel').data('carousel');
+                var thumbs = $('#imageCarousel_thumbs > .thumb');
+                $.each(thumbs, function () {
+                    var thumb = $(this), index = thumb.data('index') - 1;
+                    thumb.on('click', function () {
+                        icar.slideTo(index);
+                    });
+                });
+            {% endif %}
+
+            {% if user|has_group:"any" and project.Status == 3 %}
+                const webSocketBridgeViewnumber = new channels.WebSocketBridge();
+                webSocketBridgeViewnumber.connect('/tracking/viewnumber/{{ project.id }}/');
+                webSocketBridgeViewnumber.socket.onmessage = function (event) {
+                    $("#uniqueviewsnumber").html(event.data);
+                };
+                /* stats */
+                 {% autoescape off %}
+                    new Chart($('#chart-proj-origin-{{ project.id }}'), {
+                        data: {
+                            labels: {{ stat.labels_origin }},
+                            datasets: [{
+                                data: {{ stat.counts_origin }},
+                                backgroundColor: kelly_colors
+                            }]
+                        },
+                        type: 'pie',
+                        options: {
+                            legend: {
+                                "position": "right"
+                            },
+                        },
+                    });
+                    new Chart($('#chart-proj-reg-{{ project.id }}'), {
+                        data: {
+                            labels: {{ stat.labels_reg }},
+                            datasets: [{
+                                data: {{ stat.counts_reg }},
+                                backgroundColor: kelly_colors
+                            }]
+                        },
+                        type: 'pie',
+                        options: {
+                            legend: {
+                                "position": "right"
+                            },
+                        },
+                    });
+            {% endautoescape %}
+
+            {% endif %}
+        });
+    </script>
+{% endblock %}

@@ -1,0 +1,42 @@
+<table>
+    <tr>
+        <td>Cohort:</td>
+        <td>{{ registration.Cohort }}</td>
+    </tr>
+    <tr>
+        <td>Origin:</td>
+        <td>{{ registration.get_Origin_display }}</td>
+    </tr>
+    <tr>
+        <td>Institute:</td>
+        <td>{{ registration.Institute }}</td>
+    </tr>
+    <tr>
+        <td>Program:</td>
+        <td>{{ registration.Program }}</td>
+    </tr>
+    <tr>
+        <td>Capacity Group:</td>
+        <td>
+            {% if registration.Program.Group.count == 1 %}
+                {{ registration.Program.Group.all.0 }}
+            {% else %}
+                <ul>
+                    {% for group in registration.Program.Group.all %}
+                        <li>{{ group }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        </td>
+    </tr>
+    {% if registration.courseplanning %}
+        <tr>
+            <td>Courses:</td>
+            <td><ul>
+                {% for course in registration.courseplanning.courses.all %}
+                    <li>{{ course.Code }} in Y{{ course.Year }}Q{{ course.Quartile }}</li>
+                {% endfor %}
+            </ul></td>
+        </tr>
+    {% endif %}
+</table>

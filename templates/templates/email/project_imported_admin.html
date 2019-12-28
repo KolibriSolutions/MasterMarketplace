@@ -1,0 +1,10 @@
+{% extends 'email/base_email.html' %}
+
+{% block body %}
+Imported projects for {{ prof }}:<br/>
+<ul>
+{% for proj in projects %}
+    <li><a href="{{ DOMAIN }}{% url 'projects:details' proj.pk %}">{{ proj }}</a></li>
+{% endfor %}
+</ul>
+{% endblock %}

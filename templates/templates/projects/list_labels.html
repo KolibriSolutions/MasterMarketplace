@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% load index_tags %}
+
+{% block body %}
+    <h1>Project Labels</h1>
+    <p>
+        Labels are used to categorize projects. Projects can have multiple labels.
+        All staff members can create new (inactive) labels.
+        The {{ support_role }} ({{ support_name }}) can edit labels and set inactive labels to active.
+    </p>
+    <a href="{% url 'projects:createlabel' %}">
+        <button class="button primary">Add new</button>
+
+    </a>
+    <br/>
+    <table class="table striped hovered datatable">
+        <thead>
+        <th>Label</th>
+        <th>Active</th>
+        {% if user|has_group:"studyadvisors" %}
+            <th>Edit</th>
+        {% endif %}
+        </thead>
+        {% for label in labels %}
+            <tr>
+                <td><span class="project_label {{ label.Color }}">{{ label.Name }}</span></td>
+                <td data-search="{{ label.Active }}">
+                    <span class="mif-{{ label.Active|yesno:"checkmark fg-green,cross fg-red" }}"> </span>
+                    {% if user|has_group:"studyadvisors" and not label.Active %}
+                        <a href="{% url 'projects:activatelabel' label.id %}">
+                            <button class="button success">Make active</button>
+                        </a>
+                    {% endif %}
+                </td>
+                {% if user|has_group:"studyadvisors" %}
+                    <td>
+                        <a href="{% url 'projects:editlabel' label.id %}">
+                            <button class="button primary">Edit</button>
+                        </a>
+                        <a href="{% url 'projects:deletelabel' label.id %}">
+                            <button class="button danger">Delete</button>
+                        </a>
+                    </td>
+                {% endif %}
+            </tr>
+        {% endfor %}
+    </table>
+
+
+{% endblock %}
+{% block scripts %}
+    {{ block.super }}
+    <script>
+        $(document).ready(function () {
+            var dt = $('.datatable').dt_wrapper();
+        });
+    </script>
+{% endblock %}

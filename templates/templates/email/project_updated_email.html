@@ -1,0 +1,9 @@
+{% extends "email/base_email.html" %}
+{% block body %}
+Project <a href="{{ DOMAIN }}{% url 'projects:details' project.id %}">{{ project.Title }}</a> was updated, the status changed to {{  project.get_Status_display }}<br/>
+You can use the direct link or go to your <a href="{{ DOMAIN }}{% url 'projects:chooseedit' %}">projects list</a> to attend to this.
+    {% if message %}
+        The following comment was made on this proposal:
+        <p><i>{{ message }}</i></p>
+    {% endif %}
+{% endblock %}

@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% block body %}
+    <h1>Content Policy Violations</h1>
+    <p>
+        There are three different types of content policy violations. Forbidden pattern matches, minimum length requirements
+        and difference with other projects.
+        <br/>
+        <a href="{% url 'projects:contentpolicycalc' %}" class="button primary">Recalculate</a>
+    </p>
+    <h2>Pattern matching checks</h2>
+    Policies:
+    <ul>
+        {% for policy in pattern_policies %}
+            <li>{{ policy.1 }}</li>
+        {% endfor %}
+    </ul>
+    <h2>Length requirement checks</h2>
+    Policies:
+    <ul>
+        {% for policy in length_requirements %}
+            <li>{{ policy.0 }}: minimum {{ policy.1 }} characters</li>
+        {% endfor %}
+    </ul>
+    <h1>Results</h1>
+    {% for cpv in results %}
+        {% if cpv.pattern_violations or cpv.length_violations or cpv.diff_violations %}
+            <div class="accordion" data-role="accordion">
+                <div class="frame">
+                    <div class="heading">{{ cpv.project }}</div>
+                    <div class="content">
+                        {% include 'projects/inc_cpv_proj.html' %}
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    {% endfor %}
+{% endblock %}
+{% block scripts %}
+    {{ block.super }}
+    <script>
+        $(document).ready(function () {
+            $('.datatable').DataTable();
+        })
+    </script>
+
+{% endblock %}

@@ -1,0 +1,12 @@
+{% load custom_filters %}
+{#    <ul>#}
+{#    {% for l in stat.labels %}#}
+{#        <li>{{ l }}: {{ stat.counts|index:forloop.counter0 }}</li>#}
+{#    {% endfor %}#}
+{#    </ul>#}
+    <div class="margin20" style="float:left;width:90%;min-width:350px;">
+        <canvas id="chart-proj-origin-{{ project.id }}"></canvas>
+    </div>
+    <div class="margin20" style="float:left;width:90%;min-width:350px;">
+        <canvas id="chart-proj-reg-{{ project.id }}"></canvas>
+    </div>

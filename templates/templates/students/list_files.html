@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block body %}
+    <h1>Files list for {{ dist.Student.usermeta.get_nice_name }}</h1>
+    <h2>on project {{ dist.Project }}</h2>
+    {% if not request.user.groups.exists %}
+        <a href="{% url 'students:addfile' dist.pk %}" class="button primary">Upload new</a>
+
+    {% endif %}
+    <table class="table bordered">
+        <thead>
+        <th></th>
+        <th>Caption</th>
+        <th>File</th>
+        <th>Created</th>
+        <th>Updated</th>
+        {% if not request.user.groups.exists %}
+            <th>Edit</th>
+        {% endif %}
+        </thead>
+        {% for file in files %}
+            <tr>
+                <td><span class="icon mif-file-{{ file.metro_icon }}"></span></td>
+                <td>{{ file.Caption }}</td>
+                <td><a href="{% url "download:studentfile" file.id %}" download>{{ file.OriginalName }}</a></td>
+                <td data-sort="{{ file.Created|date:"U" }}">{{ file.Created }}</td>
+                <td data-sort="{{ file.TimeStamp|date:"U" }}">{{ file.TimeStamp }}</td>
+                {% if not request.user.groups.exists %}
+                    <td>
+                        <a href="{% url 'students:editfile' dist.id file.id %}" class="button primary">Edit</a>
+                    </td>
+                {% endif %}
+            </tr>
+        {% endfor %}
+    </table>
+{% endblock %}

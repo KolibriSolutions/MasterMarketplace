@@ -1,0 +1,6 @@
+{% extends 'email/base_email.html' %}
+
+{% block body %}
+Our LinkGuard system reported a problem with the following link: {{ url.URL }}, for the reason: {{ url.get_Status_display }}.<br/>
+    The link is therefor blocked on the project page. Please change it to a working link as soon as possible.
+{% endblock %}

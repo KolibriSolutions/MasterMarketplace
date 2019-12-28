@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+{% load index_tags %}
+{% block body %}
+    <h1>Registrations of {{ cohort }}</h1>
+    <a href="{% url 'registration:deadlines' %}" class="button primary rounded">Deadlines</a>
+    <div class="tabcontrol">
+        <ul class="tabs">
+            {% for ts in cohorts %}
+                <li {% if ts == cohort %}class="active" {% endif %}><a href="{% if ts == cohort %}#{% else %}../{{ ts }}{% endif %}">{{ ts }}</a></li>
+            {% endfor %}
+        </ul>
+    </div>
+    <div class="double-scroll">
+        <table class="table bordered striped hovered datatable ">
+            <thead>
+            <tr>
+                <th>Student</th>
+                <th>Mail</th>
+{#                <th>Cohort</th>#}
+                <th>Origin</th>
+                <th>Institute</th>
+                <th>Path</th>
+                <th>State</th>
+                <th>Latest Change</th>
+                {% if user|has_group:"studyadvisors" %}
+                    <th data-searchable="false" data-sortable="false">Actions</th>
+                {% endif %}
+            </tr>
+            </thead>
+            <tbody>
+            {% for registration in registrations %}
+                <tr>
+                    <td>{{ registration.Student.usermeta.get_nice_name }}</td>
+                    <td><a href="mailto:{{ registration.Student.email }}">{{ registration.Student.email }}</a></td>
+{#                    <td>{{ registration.Cohort }}</td>#}
+                    <td>{{ registration.get_Origin_display }}</td>
+                    <td>
+                        {% if registration.Institute and registration.Institute.strip %}
+                            {{ registration.Institute }}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                    <td>{{ registration.Program }}</td>
+                    <td>{{ registration.get_State_display }}</td>
+                    <td data-sort="{{ registration.latestChange|date:"U" }}">{{ registration.latestChange }}</td>
+                    {% if user|has_group:"studyadvisors" %}
+                        <td>
+                            {% if not registration.Approved %}
+                                <a href="{% url 'registration:approve' registration.id %}" class="button primary rounded">Approve</a>
+                            {% else %}
+                                <a href="{% url 'registration:disapprove' registration.id %}" class="button danger rounded">Disapprove</a>
+                            {% endif %}
+                            <a href="{% url 'registration:courseplanner' registration.Student.pk %}" class="button primary rounded">View</a>
+                            <a href="{% url 'registration:approvalformsupport' registration.Student.pk %}" class="button primary rounded">Download</a>
+                        </td>
+                    {% endif %}
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    {{ block.super }}
+    <script>
+
+        $(document).ready(function () {
+            $('.datatable').dt_wrapper([
+                    {column_number: 2, filter_type: "select"},
+                    {column_number: 3, filter_type: "select"},
+                    {column_number: 4, filter_type: "select"},
+                    {column_number: 5, filter_type: "select"},
+                    {column_number: 6, filter_type: "select"}
+                ]
+            );
+        });
+    </script>
+{% endblock %}

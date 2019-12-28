@@ -1,0 +1,113 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load index_tags %}
+
+{% block body %}
+    <h1>{{ group.FullName }} ({{ group.ShortName }})</h1>
+    <h4>{{ group.Head.usermeta.get_nice_name }}</h4>
+    {% if group.programs.exists %}
+        <h4>Specialization paths:</h4>
+        <ul>
+            {% for path in group.programs.all %}
+                <li>
+                    <a href="{% url 'studyguide:detailmasterprogram' path.pk %}">{{ path }}</a>
+                </li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+    {% if group.images.all|length > 0 %}
+        <div id="imageCarousel" class="carousel" data-role="carousel" data-height="300"
+             data-controls="true" data-markers="false" data-auto="false">
+            {% for image in group.images.all %}
+                <div class="slide">
+                    <a href="{% url "download:capacitygroupimage" image.pk %}" data-lightbox="lightbox1"
+                       data-title="{{ image.Caption }}">
+                        <img data-role="fitImage" data-format="fill"
+                             src="{% url "download:capacitygroupimage" image.pk %}"
+                             alt="{{ image.Caption }}"
+                             referrerpolicy="no-referrer-when-downgrade"
+                        />
+                    </a>
+                    <div class="imageCaption">
+                        <h5>{{ image.Caption }}</h5>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+        <div id="imageCarousel_thumbs" class="padding10 bg-grayLighter align-center">
+            {% for image in group.images.all %}
+                <div class="thumb" data-index="{{ forloop.counter }}"><img
+                        src="{% url "download:capacitygroupimage" image.pk %}"
+                        data-role="fitImage"
+                        data-format="fill"
+                        alt="{{ image.Caption }}"
+                        referrerpolicy="no-referrer-when-downgrade">
+                </div>
+            {% endfor %}
+        </div>
+
+    {% endif %}
+
+
+    <p>
+        {{ group.Info|show_markdown_restricted }}
+    </p>
+
+
+    {% if user|has_group:"studyadvisors" %}
+        <a href="{% url 'studyguide:editcapacitygroup'  group.pk %}" class="button primary rounded">Edit</a>
+        <a href="{% url 'studyguide:editcapacitygroupimages'  group.pk %}" class="button primary rounded">Edit Images</a>
+        <a href="{% url 'studyguide:addcapacitygroupimage'  group.pk %}" class="button primary rounded">Add Image</a>
+    {% endif %}
+{% endblock %}
+
+{% block stylesheets %}
+    <link href="{% static "css/lightbox.css" %}" rel="stylesheet">
+    <style>
+        .thumb {
+            background: white;
+            padding: 4px;
+            display: inline-block;
+            height: 2.375rem;
+            width: 2.375rem;
+            border: 1px transparent solid;
+            cursor: pointer;
+        }
+
+        #imageCarousel, #imageCarousel_thumbs {
+            max-width: 600px;
+        }
+
+        .imageCaption {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background-color: rgba(58, 58, 58, .8);
+            color: white;
+            padding: 5px;
+        }
+    </style>
+{% endblock %}
+{% block scripts %}
+
+    {{ block.super }}
+    <script src="{% static "js/lightbox.js" %}"></script>
+    <script>
+        $(document).ready(function () {
+            {% if group.images.all|length > 1 %}
+                var icar = $('#imageCarousel').data('carousel');
+                var thumbs = $('#imageCarousel_thumbs > .thumb');
+                $.each(thumbs, function () {
+                    var thumb = $(this), index = thumb.data('index') - 1;
+                    thumb.on('click', function () {
+                        icar.slideTo(index);
+                    });
+                });
+            {% endif %}
+
+        });
+    </script>
+
+
+{% endblock %}

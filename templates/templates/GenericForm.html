@@ -1,0 +1,193 @@
+{% extends "base.html" %}
+{% load static %}
+{% load custom_filters %}
+{% load index_tags %}
+{% block stylesheets %}
+    <link href="{% static "css/jquery.datetimepicker.min.css" %}" rel="stylesheet">
+    <link href="{% static "css/lightbox.css" %}" rel="stylesheet">
+    <link href="{% static "css/easymde.min.css" %}" rel="stylesheet">
+    <link href="{% static "css/fontawesome.min.css" %}" rel="stylesheet">  {# needed for easymde icons #}
+    <link href="{% static "css/fontawesome-solid.min.css" %}" rel="stylesheet">  {# needed for easymde icons #}
+{% endblock %}
+{% block body %}
+    {% if formtitle %}
+        <h1>{{ formtitle }}</h1>
+    {% endif %}
+    {% if title %}
+        <h1>{{ title }}</h1>
+    {% endif %}
+    {% block formheader %}
+    {% endblock %}
+    <form {% if actionlink %}action="{% url actionlink %}"{% endif %} method="post" enctype="multipart/form-data"
+          novalidate>
+        {% csrf_token %}
+
+        {% if formset %}
+            {% if formset.errors %}
+                <div class="panel alert">
+                    <div class="heading">
+                        <span class="title">Formset validation errors:</span>
+                    </div>
+                    <div class="content padding5">
+                        <ul>
+                            {% for error in formset.errors %}
+                                {% if error %}
+                                    <li>
+                                        Entry {{ forloop.counter }}:
+                                        {{ error }}
+                                    </li>
+                                {% endif %}
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+            {% endif %}
+
+            {{ formset.management_form }}
+            {% for form in formset %}
+                {% include 'GenericForm_include_fields.html' %}
+                {# some lines between the forms #}
+                <hr/>
+            {% endfor %}
+        {% else %}
+            {# show errors #}
+            {% if form.errors %}
+                <div class="panel alert">
+                    <div class="heading">
+                        <span class="title">Form validation errors:</span>
+                    </div>
+                    <div class="content padding5">
+                        <ul>
+                            {% for field in form.visible_fields %}
+                                {% if field.errors %}
+                                    <li>
+                                        {{ field.label }}
+                                        <ul>
+                                            {{ field.errors|unordered_list }}
+                                        </ul>
+                                    </li>
+                                {% endif %}
+                            {% endfor %}
+                            {% for error in form.non_field_errors %}
+                                <li>
+                                    {{ error }}
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+            {% endif %}
+            {% include 'GenericForm_include_fields.html' %}
+        {% endif %}
+        <button class="button success" type="submit">
+            {% if buttontext %}{{ buttontext }}{% else %}Go{% endif %}
+        </button>
+        {# On a proposal attachement/images edit form, show the buttons to add a image/attachement #}
+        {% if Project %}
+            <a href="{% url "projects:addfile" 'i' Project %}" class="button primary"><span
+                    class="mif-image"></span>Add image to project</a>
+            <a href="{% url "projects:addfile" 'a' Project %}" class="button primary"><span
+                    class="mif-file-pdf"></span>Add attachments to project</a><br/><br/>
+            <a href="{% url 'projects:details' Project %}" class="button primary">Back</a>
+        {% endif %}
+    </form>
+    {{ form.media }}
+    <div>Fields marked with <span class="fg-red text-bold"> * </span> are required.</div>
+{% endblock %}
+{% block scripts %}
+    {{ block.super }}
+    <script src="{% static "js/php-date-formatter.min.js" %}"></script>
+    <script src="{% static "js/jquery.datetimepicker.full.min.js" %}"></script>
+    {#    <script src="{% static "js/select2.min.js" %}"></script> Included in base.html #}
+    <script src="{% static "js/lightbox.js" %}"></script> {# for image form image preview #}
+    <script src="{% static "js/easymde.min.js" %}"></script> {# for image form image preview #}
+    <script>
+        let mde_editors = [];  // array of mde editors, to be able to access them afterwards.
+        $(function () {
+            // fix for IE for markdown editor polyfills:
+            if (window.navigator.userAgent.indexOf('Trident/') > -1) {
+                var script = document.createElement("script");  // create a script DOM node
+                script.src = '{% static "js/polyfill.min.js" %}';
+                document.head.appendChild(script);
+            }
+
+            $('.markdown-tag-enable').each(function (i, obj) {
+                mde_editors[i] = new EasyMDE({
+                    element: obj,
+                    autoDownloadFontAwesome: false,
+                    spellChecker: false,
+                    {% if upload_image %}
+                        toolbar: ['bold', 'italic', 'heading', '|', 'code', 'unordered-list', 'ordered-list', 'link', 'upload-image', '|', 'preview', 'side-by-side', 'fullscreen', '|', 'guide'],
+                        uploadImage: true,
+                        imageMaxSize: {% get_max_upload_size %},  // 10 mb
+                        imageUploadEndpoint: '/markdown/upload/',
+                        imageCSRFToken: '{{ csrf_token }}',
+                        errorCallback: function (errorMessage) {
+                            metroDialog.create({
+                                title: "Error",
+                                content: errorMessage,
+                                actions: [
+                                    {
+                                        title: "Ok",
+                                        onclick: function (el) {
+                                            $(el).data('dialog').close();
+                                        }
+                                    },
+                                ],
+                                options: { // dialog options
+                                    type: 'alert',
+                                }
+                            });
+                        },
+                    {% else %}
+                        toolbar: ['bold', 'italic', 'heading', '|', 'code', 'unordered-list', 'ordered-list', 'link', '|', 'preview', 'side-by-side', 'fullscreen', '|', 'guide'],
+                    {% endif %}
+                });
+            });
+
+            $(".select2-tag-enable").select2({
+                minimumResultsForSearch: 6,
+                width: '100%',
+
+                // to show colors on labels
+                templateResult: function colorTemplate(item) {
+                    if (!item.id || !item['element'].getAttribute('data-color')) {  // for non-dropdown items, like 'searching...'.
+                        return item.text;
+                    }
+                    return $('<i class="circle ' + item['element'].getAttribute('data-color')+ '"> </i> <span>' + item.text + '</span>');
+                },
+                templateSelection: function colorTemplate(item) {
+                    if (!item.id || !item['element'].getAttribute('data-color')) {  // for non-dropdown items, like 'searching...'.
+                        return item.text;
+                    }
+                    return $('<i class="circle ' + item['element'].getAttribute('data-color')+ '"> </i> <span>' + item.text + '</span>');
+                }
+            });
+            $.datetimepicker.setLocale('en');
+            $('.metrotimepicker').datetimepicker({
+                datepicker: false,
+                format: 'H:i',
+                step: 5,
+                scrollTime: false,
+                scrollInput: false,
+            });
+            $('.metrodatetimepicker').datetimepicker({
+                format: 'Y-m-d H:i',
+                step: 5,
+                minDate: '-1970-01-02', // yesterday
+                scrollMonth: false,
+                scrollTime: false,
+                scrollInput: false,
+                {#                maxDate: '{% GetEndDate %}'//last date in this timeslot#}
+            });
+            $('.metrodatepicker').datetimepicker({
+                timepicker: false,
+                format: 'Y-m-d',
+                minDate: '-1970-01-02', // yesterday
+                scrollMonth: false,
+                scrollInput: false,
+                {#                maxDate: '{% GetEndDate %}' //last date in this timeslot#}
+            });
+        });
+    </script>
+{% endblock %}

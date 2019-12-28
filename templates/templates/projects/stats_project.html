@@ -1,0 +1,15 @@
+{% extends 'generic_stats.html' %}
+{% block stat_header %}
+    <h1>Project stats</h1>
+    <div class="tabcontrol">
+        <ul class="tabs">
+            {% for f in filters %}
+                <li {% if f == filter %}class="active"{% endif %}><a href="{% url 'projects:stats' f %}">{{ f }}</a></li>
+            {% endfor %}
+        </ul>
+    </div>
+    <p>
+        Showing {{ num }} projects.
+        The minimum total capacity is {{ mincapacity }} students, the maximum total capacity is {{ maxcapacity }} students.
+    </p>
+{% endblock %}

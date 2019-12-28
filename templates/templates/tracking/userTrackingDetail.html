@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block body %}
+    <h1>Telemetry of user: {{ target.usermeta.get_nice_name }}</h1>
+    <div class="tabcontrol2" data-role="tabcontrol">
+        <ul class="tabs">
+            <li><a href="#numbers">Numbers</a></li>
+            <li><a href="#history">History</a></li>
+        </ul>
+
+        <div class="frames">
+            <div class="frame" id="numbers">
+                <table class="table">
+                    <tr>
+                        <td>Last log in time:</td>
+                        <td>{{ target.last_login|date:'H:i d-m-Y' }}</td>
+                    </tr>
+                    <tr>
+                        <td>Active session:</td>
+                        <td><span class="mif-{{ session|yesno:"checkmark fg-green,cross fg-red" }}"></span></td>
+                    </tr>
+                    <tr>
+                        <td>Registration approved:</td>
+                        <td><span
+                                class="mif-{{ target.registration.Approved|yesno:"checkmark fg-green,cross fg-red" }}"></span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Top visited pages:</td>
+                        <td>
+                            <ul>
+                                {% for page in toppages %}
+                                    <li>{{ page }}</li>
+                                {% endfor %}
+                            </ul>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+            <div class="frame" id="history">
+                <table class="table bordered striped hovered datatable">
+                    <thead>
+                    <tr>
+                        <th>Timestamp</th>
+                        <th>method</th>
+                        <th>Path</th>
+                        <th>Status Code</th>
+                        <th>ip</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for line in telemetry %}
+                        <tr>
+                            <td data-sort="{{ line.timestamp|date:"U" }}">{{ line.timestamp|date:"H:i:s d-m-Y" }}</td>
+                            <td>{{ line.method }}</td>
+                            <td>{{ line.path }}</td>
+                            <td>{{ line.status_code }}</td>
+                            <td>{{ line.ip }}</td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    {{ block.super }}
+    <script>
+        $(document).ready(function () {
+            $('.datatable').dt_wrapper([
+                {column_number: 1, filter_type: "select"},
+                {column_number: 2, filter_type: "select"},
+                {column_number: 3, filter_type: "select"},
+            ]);
+        });
+    </script>
+{% endblock %}
